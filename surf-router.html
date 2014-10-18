@@ -1,0 +1,92 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="surf-route.html">
+
+<polymer-element name="surf-router" on-route-change="handleRouteChange">
+    <template>
+    </template>
+    <script>
+        Polymer({
+            publish: {
+                /**
+                 *
+                 */
+                routes: undefined
+            },
+            routesChanged: function(){
+                window.xRoute = {
+                    root: this,
+                    ready: false,
+                    routes: {},
+                    current: {}
+                };
+                this.process(this.routes,this).then(function(){
+                    // now that all of the routes are ready, process the URL route
+                    window.xRoute.ready = true;
+                    window.xRoute.current = { foo: "bar"};
+                    console.log("Routing:",window.xRoute);
+                });
+
+
+            },
+            /**
+             *
+             * @param route - an object containing the properties for the new route
+             * @param parent - an HTML for a surf-route
+             * @param state
+             */
+            process: function(route,parent,state){
+                var deferred = Q.defer();
+                // push  state->url map
+                var elem = new SurfRoute();
+                elem.fromObject(state,route,parent.fullURL,parent.fullState).then(function(response){
+
+                    if(parent.nodeName === "SURF-ROUTER"){
+                        elem.setAttribute("id","root");
+                        this.$.root = elem;
+                        parent.shadowRoot.appendChild(elem);
+                    } else {
+                        window.xRoute.routes[elem.fullState] = elem;
+                        parent.addRoute(elem);
+                    }
+
+                    // Process children
+                    var childrenPromises = [];
+                    for(var prop in route.children){
+                        if (route.children.hasOwnProperty(prop)){
+                            var child = route.children[prop];
+                            var promise = this.process(child,elem,prop);
+                            childrenPromises.push(promise);
+                        }
+                    }
+
+                    // wait for all the children to resolve then resolve the current one
+                    Q.all(childrenPromises).then(function(){
+                        deferred.resolve("DONE");
+                    });
+                }.bind(this));
+
+                return deferred.promise;
+
+            },
+            getFullState: function(){
+                var baseState = parent.fullState == undefined ? "" : (parent.fullState == "" ? "" : parent.fullState + ".");
+                var baseURL = parent.fullURL == undefined ? "" : parent.fullURL;
+                elem.fullState = baseState + (elem.state == undefined ? "" : elem.state);
+                elem.fullURL = baseURL + elem.url;
+                if(state !== undefined){
+                    window.xRoute.routes[elem.fullState] = {
+                        fullState: elem.fullState,
+                        elem: elem,
+                        url: elem.fullURL
+                    };
+                }
+            },
+            handleRouteChange: function(e){
+                console.log("ROUTE CHANGE", e.detail);
+                this.$.root.route(e.detail.processedState, e.detail.url,"activate").then(function(response){
+                    console.log("route change complete",response);
+                }).done();
+            }
+        })
+    </script>
+</polymer-element>

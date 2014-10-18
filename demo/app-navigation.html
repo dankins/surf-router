@@ -1,0 +1,29 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../route-link.html">
+<polymer-element name="app-navigation">
+    <template>
+        <div>
+            <h3>Navigation</h3>
+            <div>
+                <ul>
+                    <li>
+                        <route-link state="main.doc">Documentation</route-link>
+                        <ul>
+                            <li><route-link state="main.doc.parameters">Route Parameters</route-link></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <route-link state="main.dynamic">Home</route-link>
+                        <ul>
+                            <li><route-link state="main.dynamic.base" data-id="foobar">Dynamic</route-link></li>
+                        </ul>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+    </template>
+    <script>
+        Polymer({});
+    </script>
+</polymer-element>

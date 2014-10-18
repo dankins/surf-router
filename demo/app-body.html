@@ -1,0 +1,27 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="app-navigation.html">
+
+<polymer-element name="app-body">
+    <template>
+        <style>
+            :host {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+        <div>
+            <h3>Surf Router Demo</h3>
+            <div layout horizontal>
+                <app-navigation></app-navigation>
+                <div flex>
+                    <content></content>
+                </div>
+            </div>
+
+        </div>
+    </template>
+    <script>
+        Polymer({
+        })
+    </script>
+</polymer-element>
