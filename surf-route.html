@@ -326,7 +326,6 @@
 
                 startPromise.then(function(response){
                     if(action == "activate") {
-                        console.log("activated",response);
                         Q.all(routeChildren(response)).then(function(){
                             deferred.resolve("ALL GOOD");
                         }).done();
