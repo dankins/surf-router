@@ -2,343 +2,387 @@
 <link rel="import" href="surf-route-abstract.html">
 <link rel="import" href="q.html">
 
-<polymer-element name="surf-route" constructor="SurfRoute">
+<polymer-element name="surf-route" constructor="SurfRoute" layout vertical center>
 
-    <template>
-        <style>
-            :host{
-                display: block;
+<template>
+    <content></content>
+</template>
+<script>
+Polymer({
+    publish: {
+        /**
+         *
+         */
+        url: "",
+        /**
+         * The name of the element that will be created
+         * Default: surf-route-abstract - this will just hold other child states
+         *
+         */
+        container: "surf-route-abstract",
+        /**
+         * Any fields here will be set as attributes on the container
+         * default undefined
+         */
+        containerData: undefined,
+        /**
+         * setting to TRUE will delay the creation of the container until the route is active
+         * setting to FALSE will not create the container (or load imports) until the route state is active
+         */
+        containerDefer: true,
+        /**
+         * the specified file/files will be imported
+         * will also work for an array
+         * example: "/app/app.html"
+         */
+        imports: undefined,
+        /**
+         * whether imports have completed loading
+         */
+        importsLoaded: false,
+        /**
+         *
+         * attached: will load any imports as soon as the route is created
+         * lazy: will not load imports until the state has been activated for the first time
+         */
+        lazyImports: true,
+        /**
+         * immediate / imports / resolved / ready
+         */
+        reveal: "immediate",
+        createdTransition: "fade",
+        destroyedTransition: "fade",
+        /**
+         * will run the function specified on the contain upon activation
+         */
+        initialize: "init",
+        /**
+         * will run the function specified on the contain upon deactivation
+         */
+        teardown: "deactivate",
+        /**
+         * will resolve data in the containers "resolve" object
+         * if 'resolve' is an object it will attempt to resolve it under the current scope
+         */
+        resolve: "container",
+        /**
+         * if true, data will be resolved upon creation of the container
+         * yes: data will be resolved and will block until successful
+         * lazy: data will be resolved but will not block the rest of the routing tree creation
+         * no: data will not be resolved until specified in "resolveTime"
+         */
+        resolveOnCreation: "no",
+        /**
+         * once: will resolve when the state is activated for the first time and will not do so again until the page is reloaded
+         * active: will resolve when the state or any of it's children are activated. This will NOT resolve again if child state is subsequently activated after the first
+         * childActive: will resolve when the state or any children are activated. If another child is activated again it WILL resolve again
+         */
+        resolveTime: "active",
+        /**
+         * This is currently not used, but at some point will active the state specified if no other child is specified
+         */
+        default: undefined,
+        /**
+         * will call the specified function on the container
+         * default: undefined
+         */
+        enterTransition: "fade",
+        leaveTransition: "fade",
+        enterState: "container",
+        leaveState: "container",
+        /**
+         * this function will be run under the context of the container when the state is activated
+         */
+        activated: undefined,
+        deactivated: undefined
+    },
+    created: function(){
+        this.childStates = []; // note - do not add this to the prototype or bad stuff will happen
+    },
+    fromObject: function(state, obj,parentURL,parentState){
+        this.state = state;
+        this.url = obj.url == undefined ? "" : obj.url;
+        this.container = obj.container === undefined ? "surf-route-abstract" : obj.container ;
+        this.containerData = obj.containerData;
+        this.containerDefer = obj.containerDefer === undefined ? true : obj.containerDefer;
+        this.imports = obj.imports;
+        this.lazyImports = obj.lazyImports === undefined ? true : obj.lazyImports;
+        this.initialize = obj.initialize !== undefined ? obj.initialize : "init" ;
+        this.teardown = obj.teardown !== undefined ? obj.teardown : "deactivate" ;
+        this.reveal = obj.reveal;
+        this.createdTransition = obj.createdTransition;
+        this.destroyedTransition = obj.destroyedTransition;
+        this.resolve = obj.resolve === undefined ? "container" : obj.resolve;
+        this.default = obj.default;
+        this.enterTransition = obj.enterTransition;
+        this.leaveTransition = obj.leaveTransition;
+        this.enterState = obj.enterState;
+        this.leaveState = obj.leaveState;
+
+        var baseState = parentState == undefined ? "" : (parentState == "" ? "" : parentState + ".");
+        var baseURL = parentURL == undefined ? "" : parentURL;
+        this.fullState = baseState + (this.state == undefined ? "" : this.state);
+        this.fullURL = baseURL + this.url;
+        /*
+         if(this.fullURL === ""){
+         this.fullURL = "/";
+         }
+         */
+
+        this.active = false;
+
+        return this.startContainer();
+
+    },
+    runIf: function(bool,fun,args){
+        return bool ? Q.when(fun.call(this,args)) : Q.when("did not run function:");
+    },
+    loadImports: function(){
+        var deferred = Q.defer();
+        if(this.imports == undefined) {
+            this.importsLoaded = true;
+            deferred.resolve("no imports");
+            return deferred.promise;
+        }
+        if(! (this.imports instanceof Array)){
+            this.imports = [this.imports];
+        }
+
+        var loaded = this.importsLoaded;
+        if(!loaded){
+            Polymer.import(this.imports, function(){
+                loaded = true;
+                deferred.resolve("loaded");
+            });
+        } else {
+            console.debug("Imports have already been loaded");
+            deferred.resolve("already loaded");
+        }
+
+        return deferred.promise;
+    },
+    startContainer: function(){
+        if(!this.containerDefer && this.container != "surf-route-abstract"){
+            return this.loadImports().then(this.createContainer.bind(this,this.container)).then(function(){
+                this.upgraded = true;
+            }.bind(this))
+        } else {
+            return this.createContainer("surf-route-abstract");
+        }
+
+    },
+    createContainer: function(name){
+        var deferred = Q.defer();
+        var elem = document.createElement(name);
+        //elem.setAttribute('unresolved', '');
+
+        this.appendChild(elem);
+        this.$.container = elem;
+        deferred.resolve(elem);
+        return deferred.promise;
+    },
+    /**
+     *
+     * @param routeElem
+     */
+    addRoute: function(routeElem){
+        this.$.container.appendChild(routeElem);
+        this.childStates.push(routeElem);
+    },
+    upgradeContainer: function(){
+        if(!this.upgraded && this.$.container.nodeName != this.container.toUpperCase()){
+            var oldContainer = this.$.container;
+            return this.loadImports().then(this.createContainer.bind(this,this.container)).then(function(newContainer){
+                //newContainer.setChildren(oldContainer.childNodes);
+                while (oldContainer.childNodes.length > 0) {
+                    newContainer.appendChild(oldContainer.childNodes[0]);
+                }
+                this.removeChild(oldContainer);
+                newContainer.id = "container";
+                this.$.container = newContainer;
+                this.upgraded = true;
+
+                return newContainer;
+            }.bind(this));
+        } else {
+            return this.loadImports().then(function(){
+                return this.$.container;
+            }.bind(this));
+        }
+    },
+    _initialize: function(resolvedData){
+        this.execIfDefined(this.initialize,this.$.container,resolvedData);
+        var elems = this.$.container.shadowRoot.querySelectorAll("[unresolved]");
+        for(var i = 0; i<elems.length; i++){
+            elems[i].setAttribute("resolved","");
+            elems[i].removeAttribute("unresolved");
+        }
+    },
+    _teardown: function(){
+        this.execIfDefined(this.teardown,this.$.container,{});
+        var elems = this.$.container.shadowRoot.querySelectorAll("[resolved]");
+        for(var i = 0; i<elems.length; i++){
+            elems[i].removeAttribute("resolved");
+            elems[i].setAttribute("unresolved","");
+        }
+    },
+    execIfDefined: function(funcName,target,params){
+        if(funcName !== undefined && typeof target[funcName] === 'function'){
+            this.async(function(){
+                target[funcName].call(target,params);
+            });
+        }
+    },
+    _activate: function(data,url){
+        var deferred = Q.defer();
+        var init = this._initialize.bind(this);
+        var container = this.$.container;
+        container.setAttribute('unresolved', '');
+        this.hidden = false;
+        this.active = true;
+
+        function complete(finalData){
+            init(finalData);
+            this.$.container.setAttribute('resolved', '');
+            this.$.container.removeAttribute('unresolved');
+            deferred.resolve(finalData);
+        }
+        this.upgradeContainer().then(this._resolve.bind(this,data,url)).then(complete.bind(this));
+
+        return deferred.promise;
+    },
+    _deactivate: function(){
+        var deferred = Q.defer();
+        if(this.active){
+            //console.log("deactivate:",this.state);
+            this._teardown();
+        }
+
+        this.active = false;
+        this.hidden = true;
+        deferred.resolve("ok");
+        return deferred.promise;
+    },
+    _resolve: function(data,url){
+        //deferred.resolve("resolved");
+        var res = undefined;
+        if(this.url.substring(0,2) === "/:"){
+            data[this.url.substring(2)] = url
+        }
+
+        if(this.resolve === "container" && this.$.container.resolve !== undefined){
+            res = this.$.container.resolve;
+            return this.resolveData(data,res).then(function(response){
+                this.$.container.data = response;
+                return response;
+            }.bind(this))
+        }
+        else if(typeof this.resolve === "object"){
+            return this.resolveData(data,this.resolve).then(function(response){
+                this.data = response;
+                return response;
+            });
+        }
+        else {
+            return Q.when(data);
+        }
+    },
+    resolveData: function(data,resolve){
+        var promises = [];
+
+        var resolveCallback =  function(prop,result){
+            return {
+                prop: prop,
+                resolved: result
             }
-        </style>
-        <div hidden?="{{hidden}}">
-            <content></content>
-        </div>
-    </template>
-    <script>
-        Polymer({
-            publish: {
-                /**
-                 *
-                 */
-                url: "",
-                /**
-                 * The name of the element that will be created
-                 * Default: surf-route-abstract - this will just hold other child states
-                 *
-                 */
-                container: "surf-route-abstract",
-                /**
-                 * Any fields here will be set as attributes on the container
-                 * default undefined
-                 */
-                containerData: undefined,
-                /**
-                 * setting to TRUE will delay the creation of the container until the route is active
-                 * setting to FALSE will not create the container (or load imports) until the route state is active
-                 */
-                 containerDefer: true,
-                /**
-                 * the specified file/files will be imported
-                 * will also work for an array
-                 * example: "/app/app.html"
-                 */
-                imports: undefined,
-                /**
-                 * whether imports have completed loading
-                 */
-                importsLoaded: false,
-                /**
-                 *
-                 * attached: will load any imports as soon as the route is created
-                 * lazy: will not load imports until the state has been activated for the first time
-                 */
-                lazyImports: true,
-                /**
-                 * immediate / imports / resolved / ready
-                 */
-                reveal: "immediate",
-                createdTransition: "fade",
-                destroyedTransition: "fade",
-                /**
-                 * will resolve data in the containers "resolve" object
-                 * if 'resolve' is an object it will attempt to resolve it under the current scope
-                 */
-                resolve: "container",
-                /**
-                 * if true, data will be resolved upon creation of the container
-                 * yes: data will be resolved and will block until successful
-                 * lazy: data will be resolved but will not block the rest of the routing tree creation
-                 * no: data will not be resolved until specified in "resolveTime"
-                 */
-                resolveOnCreation: "no",
-                /**
-                 * once: will resolve when the state is activated for the first time and will not do so again until the page is reloaded
-                 * active: will resolve when the state or any of it's children are activated. This will NOT resolve again if child state is subsequently activated after the first
-                 * childActive: will resolve when the state or any children are activated. If another child is activated again it WILL resolve again
-                 */
-                resolveTime: "active",
-                /**
-                 * This is currently not used, but at some point will active the state specified if no other child is specified
-                 */
-                default: undefined,
-                /**
-                 * will call the specified function on the container
-                 * default: undefined
-                 */
-                enterTransition: "fade",
-                leaveTransition: "fade",
-                enterState: "container",
-                leaveState: "container",
-                /**
-                 * this function will be run under the context of the container when the state is activated
-                 */
-                activated: undefined,
-                deactivated: undefined
-            },
-            created: function(){
-              this.childStates = []; // note - do not add this to the prototype or bad stuff will happen
-            },
-            fromObject: function(state, obj,parentURL,parentState){
-                this.state = state;
-                this.url = obj.url == undefined ? "" : obj.url;
-                this.container = obj.container == undefined ? "surf-route-abstract" : obj.container ;
-                this.containerData = obj.containerData;
-                this.containerDefer = obj.containerDefer == undefined ? true : obj.containerDefer;
-                this.imports = obj.imports;
-                this.lazyImports = obj.lazyImports == undefined ? true : obj.lazyImports;
-                this.reveal = obj.reveal;
-                this.createdTransition = obj.createdTransition;
-                this.destroyedTransition = obj.destroyedTransition;
-                this.resolve = obj.resolve === undefined ? "container" : obj.resolve;
-                this.default = obj.default;
-                this.enterTransition = obj.enterTransition;
-                this.leaveTransition = obj.leaveTransition;
-                this.enterState = obj.enterState;
-                this.leaveState = obj.leaveState;
+        };
 
-                var baseState = parentState == undefined ? "" : (parentState == "" ? "" : parentState + ".");
-                var baseURL = parentURL == undefined ? "" : parentURL;
-                this.fullState = baseState + (this.state == undefined ? "" : this.state);
-                this.fullURL = baseURL + this.url;
-
-                this.active = false;
-                if(this.state == undefined){
-                    console.log("undefined state");
-                    this.hidden = false;
+        for (var property in resolve) {
+            if (resolve.hasOwnProperty(property)) {
+                // TODO it may be prudent to check if this is something other than a function
+                // wrap the resolve into a promise and push it onto our array
+                var promise = {};
+                if (typeof resolve[property] == 'function'){
+                    promise = resolve[property].call(this.$.container,data);
                 } else {
-                    this.hidden = true;
+                    promise = resolve[property];
                 }
-
-                //return this.runIf(! this.lazyImports, this.loadImports)
-                //    .then(this.startContainer());
-                return this.startContainer();
-
-            },
-            runIf: function(bool,fun,args){
-                return bool ? Q.when(fun.call(this,args)) : Q.when("did not run function:");
-            },
-            loadImports: function(){
-                var deferred = Q.defer();
-                if(this.imports == undefined) {
-                    this.importsLoaded = true;
-                    deferred.resolve("no imports");
-                    return deferred.promise;
-                }
-                if(! (this.imports instanceof Array)){
-                    this.imports = [this.imports];
-                }
-
-                var loaded = this.importsLoaded;
-                if(!loaded){
-                    Polymer.import(this.imports, function(){
-                        loaded = true;
-                        deferred.resolve("loaded");
-                    });
-                } else {
-                    console.debug("Imports have already been loaded");
-                    deferred.resolve("already loaded");
-                }
-
-                return deferred.promise;
-            },
-            startContainer: function(){
-                if(!this.containerDefer && this.container != "surf-route-abstract"){
-                    return this.loadImports().then(this.createContainer.bind(this,this.container)).then(function(){
-                        this.upgraded = true;
-                    }.bind(this))
-                } else {
-
-                    return this.createContainer("surf-route-abstract");
-                }
-
-            },
-            createContainer: function(name){
-                var deferred = Q.defer();
-                var elem = document.createElement(name);
-                this.appendChild(elem);
-                this.$.container = elem;
-                this._initialize();
-                deferred.resolve(elem);
-                return deferred.promise;
-            },
-            /**
-             *
-             * @param routeElem
-             */
-            addRoute: function(routeElem){
-                this.$.container.appendChild(routeElem);
-                this.childStates.push(routeElem);
-            },
-            upgradeContainer: function(){
-                if(this.$.container.nodeName != this.container.toUpperCase()){
-                    console.log("Upgrade container:",this.$.container.nodeName);
-                    var oldContainer = this.$.container;
-                    return this.loadImports().then(this.createContainer.bind(this,this.container)).then(function(newContainer){
-                        //newContainer.setChildren(oldContainer.childNodes);
-                        while (oldContainer.childNodes.length > 0) {
-                            newContainer.appendChild(oldContainer.childNodes[0]);
-                        }
-                        this.removeChild(oldContainer);
-
-                        this.upgraded = true;
-
-                    }.bind(this));
-                } else {
-                    return Q.when(true);
-                }
-            },
-            _initialize: function(){
-                this.active = false;
-                console.debug("initializing: "+this.fullState,this.$.container.nodeName);
-            },
-            _activate: function(data,url){
-                var deferred = Q.defer();
-                function complete(finalData){
-                    this.active = true;
-                    this.hidden = false;
-                    deferred.resolve(finalData);
-                }
-                if(!this.active){
-                    if(!this.upgraded){
-                        return this.upgradeContainer().then(this._resolve.bind(this,data,url)).then(complete.bind(this));
-                    } else {
-                        return this._resolve(data,url).then(complete.bind(this));
-                    }
-                } else {
-                    complete(data);
-                }
-
-
-                return deferred.promise;
-            },
-            _deactivate: function(){
-                var deferred = Q.defer();
-                if(this.active){
-                    console.log("deactivate:",this.state);
-                }
-
-                this.active = false;
-                this.hidden = true;
-                deferred.resolve("ok");
-                return deferred.promise;
-            },
-            _resolve: function(data,url){
-                //deferred.resolve("resolved");
-                var res = undefined;
-                if(this.url.substring(0,2) === "/:"){
-                    data[this.url.substring(2)] = url
-                }
-                if(this.resolve === "container" && this.$.container.resolve !== undefined){
-                    res = this.$.container.resolve;
-                    return this.resolveData(data,res).then(function(response){
-                        this.$.container.data = response;
-                        return response;
-                    }.bind(this))
-                } else {
-                    return Q.when(data);
-                }
-            },
-            resolveData: function(data,resolve){
-                var promises = [];
-
-                var resolveCallback =  function(prop,result){
-                    return {
-                        prop: prop,
-                        resolved: result
-                    }
-                };
-
-                for (var property in resolve) {
-                    if (resolve.hasOwnProperty(property)) {
-                        // TODO it may be prudent to check if this is something other than a function
-                        // wrap the resolve into a promise and push it onto our array
-                        var promise = {};
-                        if (typeof resolve[property] == 'function'){
-                            promise = resolve[property].call(this.$.container,data);
-                        } else {
-                            promise = resolve[property];
-                        }
-                        promises.push(
-                                Q.when(promise, resolveCallback.bind(this,property))
-                                //Q.when(promise)
-                        )
-                    }
-                }
-
-                if(promises.length == 0){
-                    return data;
-                }
-
-                return Q.all(promises).then(function(results){
-                    results.forEach(function (result) {
-                        data[result.prop] = result.resolved;
-                    });
-                    console.log(data);
-                    return data;
-                });
-            },
-            route: function(relativeState,relativeURL,action,inData){
-                var data = inData === undefined ? {} : inData;
-
-                var states = relativeState.split(".");
-                var nextState = states.shift();
-                var stateRemaining = states.join(".");
-
-                var url = relativeURL.split("/");
-                var nextUrl = "";
-                if(this.url !== ""){
-                    nextUrl = url.shift();
-                }
-                var urlRemaining = url.join("/");
-
-                var deferred = Q.defer();
-
-                var startPromise = action == "activate" ? this._activate(data,nextUrl) : this._deactivate();
-                var children = this.childStates;
-
-                // returns an array of promises for each child route
-                function routeChildren(processedData){
-                    return children.map(function(child){
-                        var action = (nextState == child.state) ? "activate" : "deactivate";
-                        return child.route(stateRemaining,urlRemaining,action,processedData);
-                    });
-                }
-
-                startPromise.then(function(response){
-                    if(action == "activate") {
-                        Q.all(routeChildren(response)).then(function(){
-                            deferred.resolve("ALL GOOD");
-                        }).done();
-                    } else {
-                        deferred.resolve("deactivated OK");
-                        Q.all(routeChildren(response));
-                    }
-                });
-
-                return deferred.promise;
+                promises.push(
+                        Q.when(promise, resolveCallback.bind(this,property))
+                        //Q.when(promise)
+                )
             }
+        }
+
+        if(promises.length == 0){
+            return data;
+        }
+
+        return Q.all(promises).then(function(results){
+            results.forEach(function (result) {
+                data[result.prop] = result.resolved;
+            });
+            return data;
+        });
+    },
+    route: function(relativeState,relativeURL,action,inData){
+        var data = inData === undefined ? {} : inData;
+
+        var states = relativeState.split(".");
+        var nextState = states.shift();
+        var stateRemaining = states.join(".");
+        var deferred = Q.defer();
+
+        var nextUrl;
+        var urlRemaining;
+        if(action === "activate"){
+            if(this.url === ""){
+                nextUrl = "";
+                urlRemaining = relativeURL;
+            }
+            else if(this.url.substring(0,2) !== "/:"){
+                nextUrl = this.url;
+                urlRemaining = relativeURL.substring(this.url.length+1,relativeURL.length);
+            } else {
+                var idx = relativeURL.indexOf("/");
+                nextUrl = idx > 0 ? relativeURL.substring(0,idx) : relativeURL;
+
+                urlRemaining = relativeURL.substring(relativeURL.indexOf("/",1));
+            }
+        } else {
+            nextUrl = "";
+            urlRemaining = "";
+        }
+
+        //console.log(action,this.fullState,relativeState,relativeURL);
+        var startPromise = action == "activate" ? this._activate.bind(this,data,nextUrl) : this._deactivate.bind(this);
+        var children = this.childStates;
+        var defaultState = this.default;
+
+        // returns an array of promises for each child route
+        function routeChildren(processedData){
+            return children.map(function(child){
+                var nextAction = (nextState === "" && child.state === defaultState && action === "activate")  || (nextState === child.state )  ? "activate" : "deactivate";
+
+                return child.route(stateRemaining,urlRemaining,nextAction,processedData);
+            });
+        }
+
+        startPromise.call().then(function(response){
+            if(action == "activate") {
+                Q.all(routeChildren(response)).then(function(lastResponse){
+                    deferred.resolve(response);
+                }).done();
+            } else {
+                deferred.resolve("deactivated OK");
+                Q.all(routeChildren(response));
+            }
+        });
+
+        return deferred.promise;
+    }
 
 
-        })
-    </script>
+})
+</script>
 </polymer-element>

@@ -1,8 +1,10 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-toast/paper-toast.html">
 <link rel="import" href="surf-route.html">
 
 <polymer-element name="surf-router" on-route-change="handleRouteChange">
     <template>
+        <paper-toast id="toast" ></paper-toast>
     </template>
     <script>
         Polymer({
@@ -21,19 +23,26 @@
                     ready: false,
                     routes: {},
                     urls: {},
-                    current: {}
+                    current: {},
+                    history: []
                 };
                 this.process(this.routes,this,undefined,{}).then(function(response){
                     // now that all of the routes are ready, process the URL route
                     window.xRoute.ready = true;
-                    //window.xRoute.tree = response;
-                    var html5Mode = window.xRoute.root.url == "#";
-                    var url = html5Mode ? window.location.pathname : window.location.hash.substring(1,window.location.hash.length);
-                    //this.route(url).then(this.pushState.bind(this,url));
+                    window.xRoute.tree = response;
+                    this.initialURL();
 
-                    var result = this.urlToState(response,url);
-                    this.$.root.route(result, url,"activate");
                 }.bind(this));
+            },
+            initialURL: function(){
+                var tree = window.xRoute.tree;
+                var html5Mode = window.xRoute.root.url !== "#";
+                var url = html5Mode ? window.location.pathname : window.location.hash.substring(1,window.location.hash.length);
+                var result = this.urlToState(tree,url);
+                this.$.root.route(result, url,"activate").then(function(response){
+                    this.pushState(url,result,response,true);
+                }.bind(this));
+
             },
             /**
              *
@@ -96,31 +105,59 @@
                 }
             },
             handleRouteChange: function(e){
-                console.log("ROUTE CHANGE", e.detail);
-                this.$.root.route(e.detail.processedState, e.detail.url,"activate").then(function(response){
-                    this.pushState(e.detail.url, e.detail.processedState,response);
+                if(e.detail.state === "<"){
+                    history.back();
+                    if(e.detail.message !== undefined){
+                        this.$.toast.text = e.detail.message;
+                        this.$.toast.show();
+                    }
+                } else {
+                    var state = e.detail.state;
+                    var url = e.detail.url === undefined ? "" : e.detail.url;
+                    var message = e.detail.message;
+                    var data = e.detail.data == undefined ? {} : e.detail.data;
 
-                }.bind(this)).done();
+                    this.$.root.route(state, url,"activate",data).then(function(response){
+                        this.pushState(e.detail.url, e.detail.state,response);
+                        if(message !== undefined){
+                            this.$.toast.text = message;
+                            this.$.toast.show();
+                        }
+
+                    }.bind(this)).done();
+                }
+
             },
-            pushState: function(url,state,data){
+            pushState: function(url,state,data,replace){
                 var push = { data: data, state: state, url: url  };
-                history.pushState(push,undefined,url);
+                window.xRoute.current = push;
+                xRoute.history.push(push);
+                if(replace){
+                    history.replaceState(push,undefined,url);
+                } else {
+                    history.pushState(push,undefined,url);
+                }
             },
             handlePopstate: function(e){
-                console.log("POPSTATE", e);
+                xRoute.history.pop();
                 if(e.state == undefined){
                     this.initialURL();
                 } else {
+                    //var url = e.state.url.substring(this.$.root.url.length+1,e.state.url.length);
                     this.$.root.route(e.state.state, e.state.url,"activate");
                 }
             },
-            urlToState: function(routes,urlRemaining){
-                var segments = urlRemaining.split("/");
-                var segment = "/"+segments.shift();
-                if(routes.childStates.length > 0) {
-                    var result = routes.childStates.reduce(function(acc,child){
+            stateToUrl: function(routes,state){
 
-                        if(child.url.substring(0,2) == ("/:")) {
+            },
+            urlToState: function(routes,url){
+                var idx = url.indexOf("/",1);
+                var segment = idx > 0 ? url.substring(0,idx) : url;
+                var urlRemaining = idx > 0 ? url.substring(idx,url.length) : "";
+
+                if(routes.childStates.length > 0 && segment !== undefined) {
+                    var result = routes.childStates.reduce(function(acc,child){
+                        if(child.url.substring(0,2) == ("/:") && segment.substring(0,1) === "/") {
                             acc.dynamic = child;
                         } else if(child.url === segment) {
                             acc.exact = child;
@@ -136,13 +173,14 @@
                         selected = result.exact
                     }  else if(result.dynamic !== undefined){
                         selected = result.dynamic;
-                        //var key = selected.url.substring(2,selected.url.length);
-                        //data[key] = segment.substring(1);
                     } else if(result.default !== undefined){
-                        selected = result.default
+                        selected = result.default;
+                        // we didn't actually consume this part of the URL, so put it back on
+                        urlRemaining = urlRemaining === undefined ? segment : segment + urlRemaining;
+                    } else {
+                        return routes.fullState;
                     }
-
-                    return this.urlToState(selected,segments.join("/"));
+                    return this.urlToState(selected,urlRemaining);
                 } else {
                     return routes.fullState;
                 }
