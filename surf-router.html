@@ -1,10 +1,8 @@
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../paper-toast/paper-toast.html">
 <link rel="import" href="surf-route.html">
 
 <polymer-element name="surf-router" on-route-change="handleRouteChange">
     <template>
-        <paper-toast id="toast" ></paper-toast>
     </template>
     <script>
         Polymer({
@@ -108,17 +106,18 @@
                 if(e.detail.state === "<"){
                     history.back();
                     if(e.detail.message !== undefined){
-                        this.$.toast.text = e.detail.message;
-                        this.$.toast.show();
+                        this.fire("route-message",e.detail.message);
                     }
                 } else {
                     var state = e.detail.state;
                     var url = e.detail.url === undefined ? "" : e.detail.url;
                     var message = e.detail.message;
                     var data = e.detail.data == undefined ? {} : e.detail.data;
+                    console.log("ROUTE:", state, e.detail.data);
 
                     this.$.root.route(state, url,"activate",data).then(function(response){
                         this.pushState(e.detail.url, e.detail.state,response);
+                        console.log("ROUTE COMPLETE:", state, url, response);
                         if(message !== undefined){
                             this.$.toast.text = message;
                             this.$.toast.show();

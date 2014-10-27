@@ -1,6 +1,7 @@
+<link rel="import" href="../polymer/polymer.html">
 <polymer-element name="route-link">
 <template>
-    <a href="{{href}}" on-click="{{fireChange}}"><content></content></a>
+    <a href="{{href}}" on-click="{{fireChange}}" draggable="false"><content></content></a>
 </template>
 <script>
 Polymer({
@@ -8,27 +9,50 @@ Polymer({
         url: undefined,
         state: undefined,
         relative: false,
-        dataWatcher: {},
-        data: {}
+        inputData: undefined
     },
-    attached: function(){
-        this.data = this.bootstrapData();
-        this.setupMutationObserver();
+    created: function(){
+        this.segments = [];
+        this.segmentMap = {};
+    },
+    inputDataChanged: function(){
+        console.log("input data changed",this.inputData);
+        if(this.inputData !== undefined){
+            this.data = this.inputData;
+        }
     },
     stateChanged: function(old,newVal){
-        // it is possible that a route-link may be created before the routing tree is ready
-        // if this is the case, then set up an observe that will wait until the tree is ready
-        if(! xRoute.ready){
-            var observer = new PathObserver(xRoute,'ready');
-            observer.open(function(){
-                this.processState(this.state);
-                observer.close();
-            }.bind(this));
-        } else {
-            var result = this.processState(this.state);
-            this.processed = result.state;
+        if(this.data === undefined){
+            this.data = this.bootstrapData();
         }
-        // attach an observer that will fire whenever the current route is changed
+        if(this.observer === undefined){
+            this.setupMutationObserver();
+        }
+        if(newVal !== undefined){
+            // it is possible that a route-link may be created before the routing tree is ready
+            // if this is the case, then set up an observe that will wait until the tree is ready
+            if(! xRoute.ready){
+                var observer = new PathObserver(xRoute,'ready');
+                observer.open(function(){
+                    this.updateHref();
+                    observer.close();
+                }.bind(this));
+            }
+            this.updateHref();
+        } else {
+            console.log("state is undefined",this);
+        }
+    },
+    updateHref: function(){
+        var result = this.processState(this.state);
+        if(!result.relative){
+            this.processed = result.state;
+            var res = this.getSegments(this.url,this.data);
+            this.segments = res.segments;
+            this.segmentMap = res.segmentMap;
+
+            this.concatURL();
+        }
 
     },
     setupCurrentStateObserver: function(callback){
@@ -44,13 +68,11 @@ Polymer({
         var relative = false;
         var output;
         if(state == "<"){
-            console.log(xRoute.history);
             relative = true;
             this.setupCurrentStateObserver(this.backStateProcess.bind(this,this.state));
         }
         else if(state.indexOf("^") >= 0){
             relative = true;
-            console.log(window.xRoute.current);
             this.setupCurrentStateObserver(this.relativeStateProcess.bind(this,this.state));
         }
         else if(state.substring(0,1) === "."){
@@ -64,14 +86,14 @@ Polymer({
 
         return {
             state: output,
-            url: this.url
+            url: this.url,
+            relative: relative
         };
 
     },
     relativeStateProcess: function(input,cur){
         // current: main.queue.list
         // input: ^.edit
-        console.log("CHANGE",input,cur);
         var workingState = cur.state.split(".");
         var segments = input.split(".");
         segments.forEach(function(segment){
@@ -86,7 +108,7 @@ Polymer({
         var complete = workingState.join(".");
         this.data = cur.data;
         this.processed = complete;
-        console.log("PROCESSED:",complete,cur.data);
+        //console.log("PROCESSED:",complete,cur.data);
         this.url = window.xRoute.routes[complete].fullURL;
     },
     backStateProcess: function(input,cur){
@@ -99,18 +121,14 @@ Polymer({
             state = xRoute.history[xRoute.history.length -2].state;
             this.processed = state;
             console.log("PROCESSED:",xRoute.history[xRoute.history.length -2].url);
-            //this.href = xRoute.history[xRoute.history.length -2].url;
+            this.href = xRoute.history[xRoute.history.length -2].url;
         }
     },
     urlChanged: function (){
         //this.replaceData();
-        var res = this.getSegments(this.url,this.data);
-        this.segments = res.segments;
-        this.segmentMap = res.segmentMap;
-
-        this.concatURL();
     },
     getSegments: function(url,data){
+        //console.log("GET SEGMENTS",url,data);
         // this is just a shortcut if there are no dynamic bits
         if(url.indexOf(":") < 0){
             return { segments: [this.url], segmentMap: {} };
@@ -125,7 +143,7 @@ Polymer({
                 //var attr = this.getAttribute("data-"+name);
 
                 if(dataVal === undefined || dataVal === null) {
-                    console.log("Expecting to find attribute with name data-"+ name + " on route link");
+                    console.log("Expecting to find attribute with name data-"+ name + " on route link",this);
                 }
 
                 acc.segments[acc.idx] = {
@@ -155,10 +173,15 @@ Polymer({
         });
     },
     replaceSegment: function(key){
-        console.log("REPLACE:",key,this.data[key],this.segments);
+        //console.log("REPLACE:",key,this.data[key],this.segments);
         var idx = this.segmentMap[key];
-        this.segments[idx].data = this.data[key];
-        this.concatURL();
+        if(idx !== undefined){
+            this.segments[idx].data = this.data[key];
+            this.concatURL();
+        } else {
+            console.log("could not find index for "+key + " in ",this.segmentMap)
+        }
+
     },
     concatURL: function(){
         this.href = this.segments.reduce(function(acc,cur){
@@ -168,6 +191,9 @@ Polymer({
                 return acc + cur;
             }
         },"");
+        if(this.href === ""){
+            this.href = "/";
+        }
     },
     bootstrapData: function(){
         var data = {};
@@ -191,9 +217,10 @@ Polymer({
         mutations.forEach(function(mutation) {
             if(mutation.attributeName.substring(0,5) === "data-"){
                 var stub = mutation.attributeName.substring(5);
-                console.log("CHANGE");
                 d[stub] = target.getAttribute(mutation.attributeName);
-                target.replaceSegment(stub);
+                if(target.ready){
+                    target.replaceSegment(stub);
+                }
             }
         });
     },
