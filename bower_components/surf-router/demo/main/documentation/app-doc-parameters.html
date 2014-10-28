@@ -8,16 +8,7 @@
                 Surf Router is a suite of Polymer web components that allows routing user interface elements. It draws many design cues from the AngularJS ui-router.
                 </p>
 
-                <h4>Design Goals</h4>
-                <p>
-                    Polymer components can either be <strong>downloaded/imported and upgraded on the initial page load</strong>, or can be <strong>dynamically imported as they are needed</strong>.
-                    While the latter results in a faster initial page load, it can affect the responsiveness of the application since a route change may result in a download to import the new elements.
-                    Loading all elements upfront will prevent this, and allows more efficient compaction through vulcanization.
-                    However, in <strong>a large application may take an unacceptable amount of time to process all of the elements</strong>.
-                    Additionally, there may be portions of the application that are rarely used - downloading, importing, and processing are unnecessary.
-                    A major design goal of surf-router is to <strong>enable the developer to choose which elements should be loaded upfront or dynamically</strong>.
-                    For example, elements on the critical path can be loaded on-page load, and lesser used elements dynamically.
-                </p>
+
                 <h4>Getting Started</h4>
                 <p>
                     All surf-router apps should start with a root element that will contain the rest of your application.
@@ -27,48 +18,7 @@
                     very basic example is as follows:
                 </p>
                 <!-- BASIC ROUTES EXAMPLE-->
-                <pre>
-&lt;html&gt;
-&lt;head&gt;
-    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
-    &lt;script src="../platform/platform.js"&gt;&lt;/script&gt;
-    &lt;link rel="import" href="../polymer/polymer.html"&gt;
-    &lt;link rel="import" href="surf-router.html"/&gt;
-    &lt;polymer-element name="surf-router-demo"&gt;
-        &lt;template&gt;
-            &lt;surf-router routes="{ {routes}}"&gt;&lt;/surf-router&gt;
-        &lt;/template&gt;
-        &lt;script&gt;
 
-        Polymer({
-            routes: {
-                url: "#", // non-html5 mode, leave blank for html5
-                container: "app-body", // create the app-body element to contain all children
-                imports: "demo/app-body.html", // import this file when the route is activated
-                children: {
-                    pageA: {
-                        url: "/pageA", // the URL of this page will be "#/pageA"
-                        container: "app-page-a",
-                        imports: "demo/app-page-a.html",
-                        lazyImports: true, // import this element as soon as the route tree is processed
-                        containerDefer: false, // create the element as soon as it is imported
-                    },
-                    pageB: {
-                        url: "/pageB",
-                        container: "app-page-b",
-                        imports: "demo/app-page-b.html",
-                    }
-                }
-            }
-        });
-        &lt;/script&gt;
-    &lt;/polymer-element&gt;
-&lt;/head&gt;
-&lt;body&gt;
-    &lt;surf-router-demo&gt;&lt;/surf-router-demo&gt;
-&lt;/body&gt;
-&lt;/html&gt;
-                </pre>
 
                 <h3>Route Lifecycle</h3>
                 <h3>Lazy Loading</h3>

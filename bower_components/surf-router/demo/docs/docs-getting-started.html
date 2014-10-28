@@ -1,0 +1,36 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../../github-gist/github-gist.html">
+<link rel="import" href="../../../core-style/core-style.html">
+<link rel="import" href="../../route-link.html">
+
+<polymer-element name="docs-getting-started">
+    <template>
+        <core-style ref="base"></core-style>
+        <div class="content" unresolved transition="slide-left">
+            <core-toolbar>
+                <route-link state="home"><core-icon-button icon="arrow-back"></core-icon-button></route-link>
+                <span>Getting Started</span>
+                <span flex></span>
+                <route-link state="docs.routinglifecycle"><core-icon-button icon="arrow-forward"></core-icon-button></route-link>
+            </core-toolbar>
+            <div>
+                <p>
+                    All surf-router apps should start with a root element that will contain the rest of your application.
+                    This element should have a <i>routes</i> object that contains all of the routes/pages in your app.
+
+                    See <route-link state="docs.dynamicparameters">route parameters</route-link> for all of the options in a route, but
+                    very basic example is as follows:
+                </p>
+
+                <github-gist gistid="e54a2ed1b12934d3e134"></github-gist>
+
+            </div>
+        </div>
+
+    </template>
+    <script>
+        Polymer({
+
+        })
+    </script>
+</polymer-element>
