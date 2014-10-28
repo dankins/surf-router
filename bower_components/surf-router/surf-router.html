@@ -1,0 +1,153 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="surf-route.html">
+
+<polymer-element name="surf-router" on-route-change="handleRouteChange">
+    <template>
+    </template>
+    <script>
+        Polymer({
+            publish: {
+                /**
+                 *
+                 */
+                routes: undefined
+            },
+            ready: function(){
+                window.onpopstate = this.handlePopstate.bind(this);
+            },
+            routesChanged: function(){
+                window.xRoute = {
+                    root: this,
+                    ready: false,
+                    routes: {},
+                    urls: {},
+                    current: {}
+                };
+                this.process(this.routes,this,undefined,{}).then(function(response){
+                    // now that all of the routes are ready, process the URL route
+                    window.xRoute.ready = true;
+                    //window.xRoute.tree = response;
+                    var html5Mode = window.xRoute.root.url == "#";
+                    var url = html5Mode ? window.location.pathname : window.location.hash.substring(1,window.location.hash.length);
+                    //this.route(url).then(this.pushState.bind(this,url));
+
+                    var result = this.urlToState(response,url);
+                    this.$.root.route(result, url,"activate");
+                }.bind(this));
+            },
+            /**
+             *
+             * @param route - an object containing the properties for the new route
+             * @param parent - an HTML for a surf-route
+             * @param state
+             * @param inTree
+             */
+            process: function(route,parent,state){
+                var tree = {};
+                var deferred = Q.defer();
+                // push  state->url map
+                var elem = new SurfRoute();
+                elem.fromObject(state,route,parent.fullURL,parent.fullState).then(function(response){
+
+                    if(parent.nodeName === "SURF-ROUTER"){
+                        elem.setAttribute("id","root");
+                        this.$.root = elem;
+                        parent.shadowRoot.appendChild(elem);
+                    } else {
+                        window.xRoute.routes[elem.fullState] = elem;
+                        parent.addRoute(elem);
+                    }
+                    tree.url = elem.url;
+                    tree.fullURL = elem.fullURL;
+                    tree.fullState = elem.fullState;
+                    tree.state = elem.state;
+
+                    // Process children
+                    var childrenPromises = [];
+                    for(var prop in route.children){
+                        if (route.children.hasOwnProperty(prop)){
+                            var child = route.children[prop];
+                            var promise = this.process(child,elem,prop);
+                            childrenPromises.push(promise);
+                        }
+                    }
+
+                    // wait for all the children to resolve then resolve the current one
+                    Q.all(childrenPromises).then(function(children){
+                        tree.childStates = children;
+                        deferred.resolve(tree);
+                    });
+                }.bind(this));
+
+                return deferred.promise;
+
+            },
+            getFullState: function(){
+                var baseState = parent.fullState == undefined ? "" : (parent.fullState == "" ? "" : parent.fullState + ".");
+                var baseURL = parent.fullURL == undefined ? "" : parent.fullURL;
+                elem.fullState = baseState + (elem.state == undefined ? "" : elem.state);
+                elem.fullURL = baseURL + elem.url;
+                if(state !== undefined){
+                    window.xRoute.routes[elem.fullState] = {
+                        fullState: elem.fullState,
+                        elem: elem,
+                        url: elem.fullURL
+                    };
+                }
+            },
+            handleRouteChange: function(e){
+                console.log("ROUTE CHANGE", e.detail);
+                this.$.root.route(e.detail.processedState, e.detail.url,"activate").then(function(response){
+                    this.pushState(e.detail.url, e.detail.processedState,response);
+
+                }.bind(this)).done();
+            },
+            pushState: function(url,state,data){
+                var push = { data: data, state: state, url: url  };
+                history.pushState(push,undefined,url);
+            },
+            handlePopstate: function(e){
+                console.log("POPSTATE", e);
+                if(e.state == undefined){
+                    this.initialURL();
+                } else {
+                    this.$.root.route(e.state.state, e.state.url,"activate");
+                }
+            },
+            urlToState: function(routes,urlRemaining){
+                var segments = urlRemaining.split("/");
+                var segment = "/"+segments.shift();
+                if(routes.childStates.length > 0) {
+                    var result = routes.childStates.reduce(function(acc,child){
+
+                        if(child.url.substring(0,2) == ("/:")) {
+                            acc.dynamic = child;
+                        } else if(child.url === segment) {
+                            acc.exact = child;
+                        } else if(child.url === "") {
+                            acc.default = child;
+                        }
+                        return acc;
+                    },{});
+
+
+                    var selected = undefined;
+                    if(result.exact !== undefined){
+                        selected = result.exact
+                    }  else if(result.dynamic !== undefined){
+                        selected = result.dynamic;
+                        //var key = selected.url.substring(2,selected.url.length);
+                        //data[key] = segment.substring(1);
+                    } else if(result.default !== undefined){
+                        selected = result.default
+                    }
+
+                    return this.urlToState(selected,segments.join("/"));
+                } else {
+                    return routes.fullState;
+                }
+
+            }
+        })
+    </script>
+</polymer-element>

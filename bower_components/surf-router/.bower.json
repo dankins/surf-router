@@ -1,0 +1,38 @@
+{
+  "name": "surf-router",
+  "version": "0.0.1",
+  "authors": [
+    "Dan Kinsley <kinsleyd@gmail.com>"
+  ],
+  "description": "Polymer web component for URL routing.",
+  "keywords": [
+    "polymer",
+    "web-components",
+    "router"
+  ],
+  "main": "surf-router.html",
+  "license": "MIT",
+  "homepage": "https://github.com/SurfTV/surf-router",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "../",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^0.4.2",
+    "polymer-test-tools": "Polymer/polymer-test-tools#^0.4.2",
+    "q": "1.0.1"
+  },
+  "_release": "0.0.1",
+  "_resolution": {
+    "type": "version",
+    "tag": "0.0.1",
+    "commit": "301b2211b9805a02b85af34a71a3f6326ee62811"
+  },
+  "_source": "git://github.com/SurfTV/surf-router.git",
+  "_target": "0.0.1",
+  "_originalSource": "surf-router"
+}

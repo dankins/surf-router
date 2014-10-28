@@ -1,0 +1,19 @@
+<link rel="import" href="../../../polymer/polymer.html">
+
+<link rel="import" href="../../surf-route-abstract.html">
+
+<polymer-element name="app-login">
+    <template>
+        <div>LOGIN</div>
+        {{ data.login }}
+    </template>
+    <script>
+        Polymer({
+            resolve: {
+                login: function(){
+                    console.log("RESOLVING LOGIN");
+                }
+            }
+        })
+    </script>
+</polymer-element>

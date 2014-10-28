@@ -1,0 +1,90 @@
+<polymer-element name="route-link">
+    <template>
+        <a href="{{href}}" on-click="{{fireChange}}"><content></content></a>
+    </template>
+    <script>
+        Polymer({
+            publish: {
+                url: undefined,
+                state: undefined,
+                relative: false
+            },
+            stateChanged: function(){
+                // it is possible that a route-link may be created before the routing tree is ready
+                // if this is the case, then set up an observe that will wait until the tree is ready
+                if(! xRoute.ready){
+                    var observer = new PathObserver(xRoute,'ready');
+                    observer.open(function(){
+                        this.processState();
+                        observer.close();
+                    }.bind(this));
+                } else {
+                    this.processState();
+                }
+                // attach an observer that will fire whenever the current route is changed
+
+            },
+            setupCurrentStateObserver: function(){
+                if(this.currentStateObserver == undefined){
+                    this.currentStateObserver = new PathObserver(xRoute,'current');
+                    this.currentStateObserver.open(function(){
+                        console.log("Current State Changed");
+                        this.processState();
+                    }.bind(this));
+                }
+            },
+            currentStateChanged: function(added,removed,changed){
+                console.log("current changed",added,removed,changed);
+            },
+            processState: function(){
+              var state = this.state;
+              if(state == "<"){
+                  console.log("how do we get previous state without popping it?");
+                  state =  window.xRoute.current.state;
+              }
+              if(state.indexOf("^") > 0){
+                  this.relative = true;
+                  console.log("This should process relative states");
+
+              }
+              if(state.substring(0,1) === "."){
+                  this.relative = true;
+                  console.log("resolve the state relative to the current one");
+                  state = window.xRoute.current.state + state.substring(1,state.length);
+              }
+
+              this.processed = state;
+              this.url = window.xRoute.routes[this.processed].fullURL;
+              //console.log("processed state:",this.state,this.processed);
+              return state;
+            },
+            urlChanged: function (){
+                this.replaceData();
+            },
+            replaceData: function(){
+                if(this.url.indexOf(":") > 0){
+                    this.href = this.url.split("/").reduce(function(acc,cur){
+                        if(cur.substring(0,1) === ":"){
+                            var name = cur.substring(1,cur.length);
+                            var data = this.getAttribute("data-"+name);
+                            if(data === undefined) {
+                                console.log("Expecting to find attribute with name data-"+ name + " on route link");
+                            }
+                            return acc + "/" + data;
+                        } else {                    return acc + "/" + cur;
+                        }
+                    }.bind(this));
+                } else {
+                    this.href = this.url;
+                }
+            },
+            fireChange: function(e) {
+                if (e != undefined) {
+                    e.preventDefault();
+                }
+                console.log(this.href,this.state);
+                this.fire("route-change", {state: this.state, url: this.href, processedState: this.processed})
+            }
+        });
+    </script>
+</polymer-element>

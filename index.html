@@ -1,23 +1,82 @@
 <!doctype html>
-<!--
-Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE
-The complete set of authors may be found at http://polymer.github.io/AUTHORS
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS
--->
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
-  <script src="../platform/platform.js"></script>
-  <link rel="import" href="../polymer/polymer.html">
-  <link rel="import" href="../core-component-page/core-component-page.html">
+    <title>Surf Router Demo</title>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <script src="bower_components/platform/platform.js"></script>
+    <link rel="import" href="bower_components/polymer/polymer.html">
+    <link rel="import" href="bower_components/surf-router/surf-router.html"/>
+    <link rel="import" href="demo/themes.html"/>
+    <polymer-element name="surf-router-demo">
+        <template>
+            <surf-router routes="{{routes}}"></surf-router>
+        </template>
+        <script>
+            Polymer({
+                routes: {
+                    url: "#",
+                    container: "app-body",
+                    imports: "demo/app-body.html",
+                    default: "home",
+                    children: {
+                        home: {
+                            url: "",
+                            container: "app-home",
+                            imports: "demo/main/app-home.html"
+                        },
+                        docs: {
+                            url: "/docs",
+                            container: "surf-route-abstract",
+                            default: "home",
+                            children: {
+                                gettingstarted: {
+                                    url: "/getting-started",
+                                    container: "docs-getting-started",
+                                    imports: "demo/docs/docs-getting-started.html"
+                                },
+                                routinglifecycle: {
+                                    url: "/routing-lifecycle",
+                                    container: "docs-routing-lifecycle",
+                                    imports: "demo/docs/docs-routing-lifecycle.html"
+                                },
+                                lazyloading: {
+                                    url: "/lazy-loading",
+                                    container: "docs-lazy-loading",
+                                    imports: "demo/docs/docs-lazy-loading.html"
+                                },
+                                dynamicparameters: {
+                                    url: "/dynamic-parameters",
+                                    container: "docs-dynamic-parameters",
+                                    imports: "demo/docs/docs-dynamic-parameters.html"
+                                },
+                                resolvedata: {
+                                    url: "/resolve-data",
+                                    container: "docs-resolve-data",
+                                    imports: "demo/docs/docs-resolve-data.html"
+                                },
+                                routelinks: {
+                                    url: "/route-links",
+                                    container: "docs-route-links",
+                                    imports: "demo/docs/docs-route-links.html"
+                                },
+                                transitions: {
+                                    url: "/transitions",
+                                    container: "docs-transitions",
+                                    imports: "demo/docs/docs-transitions.html"
+                                }
+                            }
 
+                        }
+                    }
+                }
+            })
+        </script>
+    </polymer-element>
 </head>
-<body unresolved>
-
-  <core-component-page></core-component-page>
-
+<body>
+    <surf-router-demo></surf-router-demo>
 </body>
 </html>

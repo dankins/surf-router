@@ -1,0 +1,124 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="../platform/platform.js"></script>
+    <link rel="import" href="../polymer/polymer.html">
+    <link rel="import" href="surf-router.html"/>
+    <polymer-element name="surf-router-demo">
+        <template>
+            <surf-router routes="{{routes}}"></surf-router>
+        </template>
+        <script>
+            Polymer({
+                routes: {
+                    url: "#",
+                    container: "app-body",
+                    imports: "demo/app-body.html",
+                    lazyImports: true,
+                    containerDefer: false,
+                    reveal: "immediate",
+                    enterTransition: "fade",
+                    leaveTransition: "fade",
+                    enterState: "container",
+                    leaveState: "container",
+                    resolve: "container",
+                    resolveTime: "children",
+                    default: "main",
+                    children: {
+                        auth: {
+                            url: "/auth",
+                            container: "surf-route-abstract", // this is an element that has no logic other than holding other states
+                            reveal: "immediate",
+                            createdTransition: "fade",
+                            destroyedTransition: "fade",
+                            resolve: "container",
+                            children: {
+                                login: {
+                                    url: "/login",
+                                    containerDefer: false,
+                                    container: "app-login",
+                                    imports: "demo/auth/app-login.html",
+                                    reveal: "immediate",
+                                    createdTransition: "fade",
+                                    destroyedTransition: "fade",
+                                    resolve: "container"
+                                },
+                                logout: {
+                                    url: "/logout",
+                                    container: "app-logout",
+                                    imports: "/app/auth/app-logout.html",
+                                    reveal: "immediate",
+                                    createdTransition: "fade",
+                                    destroyedTransition: "fade"
+                                },
+                                signup: {
+                                    url: "/signup",
+                                    container: "app-signup",
+                                    imports: "demo/auth/app-signup.html",
+                                    reveal: "immediate",
+                                    createdTransition: "fade",
+                                    destroyedTransition: "fade",
+                                    resolve: "container"
+                                }
+                            }
+                        },
+                        main: {
+                            url: "",
+                            container: "surf-route-abstract",
+                            resolve: "container",
+                            default: "home",
+                            children: {
+                                doc: {
+                                  url: "/docs",
+                                  children: {
+                                      parameters: {
+                                          url: "/parameters",
+                                          container: "app-doc-parameters",
+                                          imports: "demo/main/documentation/app-doc-parameters.html"
+                                      }
+                                  }
+                                },
+                                home: {
+                                    url: "",
+                                    container: "demo-main-home",
+                                    imports: "demo/main/app-home.html",
+                                    lazyImports: true,
+                                    reveal: "immediate",
+                                    createdTransition: "fade",
+                                    destroyedTransition: "fade",
+                                    resolve: "container",
+                                    onReady: "init"
+                                },
+                                dynamic: {
+                                    url: "/dynamic",
+                                    container: "app-home",
+                                    imports: "demo/main/app-home.html",
+                                    resolve: "container",
+                                    onReady: "init",
+                                    children: {
+                                        base: {
+                                            url: "/:id",
+                                            container: "app-home-dynamic",
+                                            imports: "demo/main/app-home-dynamic.html",
+                                            reveal: "immediate",
+                                            createdTransition: "fade",
+                                            destroyedTransition: "fade",
+                                            resolve: "container",
+                                            onReady: "init"
+                                        }
+                                    }
+
+                                }
+                            }
+
+                        }
+                    }
+                }
+            })
+        </script>
+    </polymer-element>
+</head>
+<body>
+    <surf-router-demo></surf-router-demo>
+</body>
+</html>
