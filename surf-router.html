@@ -1,6 +1,19 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="surf-route.html">
 
+<!--
+Surf Router is a suite of Polymer web components that allows routing user interface elements. It draws many design cues from the AngularJS ui-router.
+
+##### Example
+
+    <seed-router routes="{{routes}}"></seed-element>
+
+@element surf-router
+@blurb Surf Router is a suite of Polymer web components that allows routing user interface elements. It draws many design cues from the AngularJS ui-router.
+@status alpha
+@homepage http://surfapp.github.io/surf-router
+-->
+
 <polymer-element name="surf-router" on-route-change="handleRouteChange">
     <template>
     </template>
@@ -8,7 +21,10 @@
         Polymer({
             publish: {
                 /**
+                 * `routes` contain a nested tree of properties to configure `surf-route` elements
                  *
+                 * @property routes
+                 * @type object
                  */
                 routes: undefined
             },
@@ -103,26 +119,23 @@
                 }
             },
             handleRouteChange: function(e){
+                var request = e.detail;
+                var parameters = {}; // TODO fill this instead of passing around URL
+                this.fireRouteChangeStart(e.detail);
                 if(e.detail.state === "<"){
                     history.back();
                     if(e.detail.message !== undefined){
-                        this.fire("route-message",e.detail.message);
+                        this.fireRouteChangeComplete(request,parameters, "back");
                     }
                 } else {
-                    var state = e.detail.state;
-                    var url = e.detail.url === undefined ? "" : e.detail.url;
-                    var message = e.detail.message;
-                    var data = e.detail.data == undefined ? {} : e.detail.data;
-                    console.log("ROUTE:", state, e.detail.data);
+                    var state = request.state;
+                    var url = request.url === undefined ? "" : request.url;
+                    var data = request.data == undefined ? {} : request.data;
+
 
                     this.$.root.route(state, url,"activate",data).then(function(response){
-                        this.pushState(e.detail.url, e.detail.state,response);
-                        console.log("ROUTE COMPLETE:", state, url, response);
-                        if(message !== undefined){
-                            this.$.toast.text = message;
-                            this.$.toast.show();
-                        }
-
+                        this.pushState(request.url, request.state,response);
+                        this.fireRouteChangeComplete(request,parameters, response);
                     }.bind(this)).done();
                 }
 
@@ -184,6 +197,29 @@
                     return routes.fullState;
                 }
 
+            },
+            /**
+             * Fired when the `surf-router` receives a `route-change` event.
+             * @event route-change-start
+             * @param {Object} detail contains whatever detail came from the `route-change` event
+             */
+            fireRouteChangeStart: function(eventData){
+                this.fire("route-change-start",eventData);
+            },
+            /**
+             * Fired after the route change is complete.
+             * @event route-change-complete
+             * @param {Object} detail
+             * @param {Object} detail.request the object passed in by the `route-change` event
+             * @param {Object} detail.parameters the values of any dynamic parameters
+             * @param {Object} detail.response object containing any resolved data
+             */
+            fireRouteChangeComplete: function(request,parameters, response){
+                this.fire("route-change-complete",{
+                    request: request,
+                    parameters: parameters,
+                    response: response
+                });
             }
         })
     </script>
