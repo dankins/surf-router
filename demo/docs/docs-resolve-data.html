@@ -9,13 +9,86 @@
         <core-style ref="base"></core-style>
         <div class="content" unresolved transition="slide-left">
             <core-toolbar>
-                <route-link state="docs.routinglifecycle"><core-icon-button icon="arrow-back"></core-icon-button></route-link>
+                <route-link state="docs.dynamicparameters"><core-icon-button icon="arrow-back"></core-icon-button></route-link>
                 <span>Resolve Data</span>
                 <span flex></span>
-                <route-link state="docs.routinglifecycle"><core-icon-button icon="arrow-forward"></core-icon-button></route-link>
+                <route-link state="docs.routelinks"><core-icon-button icon="arrow-forward"></core-icon-button></route-link>
             </core-toolbar>
             <div>
+                <p>
+                    Resolving data allows you to retrieve data before a state is activated.
+                    Any data resolved from a parent state will be available to the child.
+                    The state will look for a <i>resolve</i> property on the container and will then execute all of the functions contained therein.
+                    The resulting values will be passed into the <i>initialize</i> function to allow you to use the them in the container.
+                </p>
+                <p>
+                    All of the resolved data are wrapped as promises using the <a href="https://github.com/kriskowal/q">Q library</a>.
+                    It is recommended to use the Q library to wrap API calls to prevent resolves from blocking.
+                    An example is provided below:
+                </p>
+                <pre><code>
+    resolve: {
+        foo: function(data){
+            var deferred = Q.defer();
+            var id = data.id;
+            this.async(function(){
+                deferred.resolve("foo");
+            });
+            return deferred.promise();
 
+        },
+        bar: function(){
+            var srv = new ApiRequest("GET","/foo/bar/"+data.id)
+            return srv.run(); // return a promise directly
+        },
+        baz: function(data){
+            return -1; // you can return the value directly instead of a promise if you prefer
+        }
+    },
+    init: function(data){
+         this.id = data.id;
+         this.foo = data.foo;
+         this.bar = data.bar;
+         this.baz = data.baz;
+    }
+                </code></pre>
+
+                <p>
+                    The default value for a state's <i>resolve</i> property is "container".
+                    This indicates that the state will look for a "resolve" property in the container element.
+                    If the <i>resolve</i> property is an object it will resolve the data in the context of the container.
+                </p>
+                <p>Example routes object:</p>
+                <pre><code>
+    Polymer({
+        routes: {
+            url: "", // HTML5 mode
+            container: "app-body",
+            imports: "app-body.html",
+            resolve: "container", // this is optional - container is the default
+            children: {
+                foo: {
+                    url: "/foo", // this is an abstract state that does not display anything other than its children
+                    resolve: { // example of an inline resolve instead of from container's resolve property
+                        foo: {
+                            return "foovalue";
+                        }
+                    }
+                    children: {
+                        bar: { // complete state is foo.bar
+                            url: "/bar" // complete url is /foo/bar
+                            initialize: function(data){ // this could instead be run under the container if the property was a string instead of function
+                                console.log(data) // should output foovalue, and whatever was resolved in "bar"
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
+    })
+
+                </code></pre>
             </div>
         </div>
 

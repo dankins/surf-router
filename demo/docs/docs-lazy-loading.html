@@ -12,9 +12,63 @@
                 <route-link state="docs.routinglifecycle"><core-icon-button icon="arrow-back"></core-icon-button></route-link>
                 <span>Lazy Loading</span>
                 <span flex></span>
-                <route-link state="docs.routinglifecycle"><core-icon-button icon="arrow-forward"></core-icon-button></route-link>
+                <route-link state="docs.dynamicparameters"><core-icon-button icon="arrow-forward"></core-icon-button></route-link>
             </core-toolbar>
             <div>
+                <p>
+                    Typically every web component you create requires an import. In large applications this can result is a huge number of HTTP requests.
+                    In an effort to mitigate this, you can <a href="https://github.com/Polymer/vulcanize">vulcanize</a> your components into a single file.
+                    While this will cut down on HTTP requests, all of the components are loaded at once.
+                </p>
+                <p>
+                    This may take an unacceptable amount of time, especially in browsers that don't natively support web components.
+                    Additionally, many of the components may not be used - such as those outside of the critical path - resulting in wasted bandwidth and load times.
+                </p>
+                <p>
+                    surf-router allows you to control which files should be loaded on the initial page load, and which will be deferred until the state is activated.
+                    This allows you to strike a balance between initial page load time and state change load time.
+                </p>
+                <h3>Configuration Options</h3>
+                <p>
+                    There are two main configuration options to control lazy loading:
+                </p>
+
+                <ul>
+                    <li><i>lazyImports</i> (default = true)
+                        <ul>
+                            <li><strong>true</strong>: any imports for the state will not be resolved until the state has been activated for the first time</li>
+                            <li><strong>false</strong>: imports will be resolved during the initial page load</li>
+                        </ul>
+                    </li>
+                    <li><i>containerDefer</i> (default = true)
+                        <ul>
+                            <li><strong>true</strong>: container will not be "upgraded" from a surf-route-abstract to the custom element specified in the "container" property until the state is activated</li>
+                            <li><strong>false</strong>: container will initially be created as the element specified in the "container" property</li>
+                        </ul>
+                    </li>
+                </ul>
+                <p>
+                    If your element has already been imported, and it is cheap to initialize, it makes sense to set <i>lazyImports = false</i> and <i>containerDefer = false</i>.
+                    This will save a few cycles when the state is activated since it will not need to upgrade from a surf-route-abstract element.
+                </p>
+                <p>
+                    <small>Note: I am not really sure there is a use case where <i>lazyImports = true</i> and <i>containerDefer = false</i> makes sense.
+                        It is likely containerDefer will be removed in the future and the container will be upgraded whenever the imports happen.
+                    </small>
+                </p>
+
+                <div>
+                    <div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </div>
+
+                <h3></h3>
 
             </div>
         </div>

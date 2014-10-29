@@ -9,13 +9,87 @@
         <core-style ref="base"></core-style>
         <div class="content" unresolved transition="slide-left">
             <core-toolbar>
-                <route-link state="docs.routinglifecycle"><core-icon-button icon="arrow-back"></core-icon-button></route-link>
+                <route-link state="docs.resolvedata"><core-icon-button icon="arrow-back"></core-icon-button></route-link>
                 <span>Route Links</span>
                 <span flex></span>
-                <route-link state="docs.routinglifecycle"><core-icon-button icon="arrow-forward"></core-icon-button></route-link>
+                <route-link state="docs.transitions"><core-icon-button icon="arrow-forward"></core-icon-button></route-link>
             </core-toolbar>
             <div>
+                <p>
+                    There are two ways to transition to another state:
+                </p>
+                <ul>
+                    <li>Fire a "route-change" event from within a container</li>
+                    <li>Create a <i>route-link</i> element</li>
+                </ul>
+                <p>
+                    The <i>route-link</i> element is nothing more than a wrapped <i>a</i> link element that is configured to fire a "route-change" event on-click.
+                    Instead of accepting a URL, the <i>route-link</i> requires the state it should route to and data for any <route-link state="docs.dynamicparameters">dynamic parameters</route-link>.
+                    An example is provided below:
+                </p>
+                <pre><code>
+    &lt;route-link state="foo.bar.baz" data-bar="{{'\{{barId}\}'}}"&gt;My Link&lt;/route-link&gt;
+                </code></pre>
+                <p>
+                    Route link attributes starting with "data-*" will be used for URL dynamic parameters.
+                    In the above example, if the combined URL from the "foo.bar.baz" resulted in "/foo/:bar/baz", the :bar variable would be replaced for in the final URL.
+                </p>
+                <p>
+                    In most cases a <i>route-link</i> is desirable since it gives the user a hint of where clicking the link will take them.
+                    However, it is also possible to route by simply firing a "route-change" event.
+                    For example, to route after a form is submitted you can do something like the following:
+                </p>
+                <pre><code>
+    handleSubmit: function(){
+        var success = function(){
+            var event = {
+                message: "Action completed!", // this is not needed (see below)
+                state: "foo.bar", // this is the only required property
+                data: { bar: "bardata" }
+            };
 
+            this.fire("route-change",event);
+        };
+
+        var failure = function(){
+            var event = {
+                message: "Error!",
+                state: "foo.another"
+            };
+
+            this.fire("route-change",event);
+        };
+    };
+        this.doSubmit() // this function performs an HTTP request and returns a promise
+            .then(success.bind(this),failure.bind(this))
+    }
+                </code></pre>
+
+                <p>
+                    The "route-change" event will bubble up until it reaches the <i>surf-router</i> element.
+                    Once that is received, the router will fire a "route-change-start" event, and then the "route-change-complete" event.
+                </p>
+                <p>
+                    You can stuff arbitrary data in your "route-change" events that will be passed along to the start and complete events.
+                    A potential use for this is to display a <i>paper-toast</i> with the "message" from the route-change in the example below.
+                    By adding a handle for the event you can display the toast like so:
+                </p>
+                <pre><code>
+    &lt;paper-toast id="toast"&gt;&lt;/paper-toast&gt;
+    &lt;surf-router routes={{routes}} on-route-change-complete="{{'\{{displayToastMessage}\}'}}"&gt;&lt;/surf-router&gt;
+                </code></pre>
+                <p>And your handler:</p>
+                <pre><code>
+    displayToastMessage: function(e){
+        var startingData = e.detail.routeDetail.data;
+        var message = routeDetail.message;
+
+        if(message !== undefined){
+            this.$.toast.text = message;
+            this.$.toast.show();
+        }
+    }
+                </code></pre>
             </div>
         </div>
 

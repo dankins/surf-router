@@ -40,7 +40,7 @@
     "tag": "0.0.1",
     "commit": "bae96262ac38aa5273a88070e5c59377d2d558a1"
   },
-  "_source": "git://github.com/SurfTV/surf-router.git",
-  "_target": "0.0.1",
-  "_originalSource": "surf-router"
+  "_source": "git://github.com/surfapp/surf-router.git",
+  "_target": "^0.0.1",
+  "_originalSource": "surfapp/surf-router"
 }

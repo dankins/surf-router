@@ -12,9 +12,50 @@
                 <route-link state="docs.gettingstarted"><core-icon-button icon="arrow-back"></core-icon-button></route-link>
                 <span>Routing Lifecycle</span>
                 <span flex></span>
-                <route-link state="docs.routinglifecycle"><core-icon-button icon="arrow-forward"></core-icon-button></route-link>
+                <route-link state="docs.lazyloading"><core-icon-button icon="arrow-forward"></core-icon-button></route-link>
             </core-toolbar>
             <div>
+                <h3>Root Processing</h3>
+                <p>Your application should be contained within a <i>surf-router</i> element. This element has a "routes" attribute that describes all of the states within your application.
+                    The routes will be processed upon page load to create the scaffolding of your application.
+                <p>
+                    Each state consists of a <i>surf-route</i> element which has a single child element known as the "container".
+                    Any child routes to the state are then added to the container's shadow DOM. This is done recursively for all children until all states have a <i>surf-route</i> and container.
+                </p>
+                <p>
+                    Since the element specified in the "container" property may not have been imported on page load, by default all containers will be the element <i>surf-route-abstract</i>.
+                    When the state is activated, the element will be "upgraded" and replaced with the type specified by the "container" property.
+                </p>
+                <p>
+                    If <i>lazyImports</i> property is FALSE, and <i>containerDefer</i> is FALSE, then the element specified by the "container" property will be created on load, instead of <i>surf-route-abstract</i> .
+                    This is should be done if your element has already been imported, since it will save some processing when it is activated.
+                    You will likely want set these properties if your application is vulcanized into a single file.
+                </p>
+
+                <h3>State Activation</h3>
+                <p>
+                    The initial route to load based on the starting URL will process after the initial route scaffolding has completed.
+                    This will translate a URL to the states that should be activated.
+                </p>
+                <p>State activation goes through the following steps:</p>
+                <ol>
+                    <li>Remove the <i>hidden</i> attribute on the surf-route element</li>
+                    <li>Load imports if they have not already been loaded</li>
+                    <li>Upgrade container if it has not yet been upgraded</li>
+                    <li><route-link state="docs.resolvedata">Resolve</route-link> any data needed</li>
+                    <li>Execute the function specified in the "initialize" property under the context of the container</li>
+                    <li>Replace the <route-link state="docs.transitions">unresolved</route-link> attribute with <i>resolved</i> on any elements in the container</li>
+                    <li>Activate or deactivate any children of this state</li>
+                </ol>
+
+                <h3>State Deactivation</h3>
+                <p>State deactivation goes through the following steps: </p>
+                <ol>
+                    <li>Sets the <i>hidden</i> attribute on the surf-route element</li>
+                    <li>Executes the function specified in the "teardown" property under the context of the container</li>
+                    <li>Replace the <route-link state="docs.transitions">resolved</route-link> attribute with <i>unresolved</i> on any elements in the container</li>
+                    <li>Deactivates any children of this state</li>
+                </ol>
 
             </div>
         </div>

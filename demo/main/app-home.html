@@ -25,6 +25,16 @@
                 <p class="text">
                     Surf Router is a suite of Polymer web components that allows routing user interface elements. It draws many design cues from the AngularJS ui-router.
                 </p>
+                <p>
+                    This site is built using surf-router. Don't hesitate to look at the <a href="https://github.com/surfapp/surf-router/tree/gh-pages">source code</a> as a supplement to the documentation.
+                </p>
+                <h4>Install</h4>
+                <p> In your bower.json file add: </p>
+                <pre><code>
+    "dependencies": {
+        "surf-router": "surfapp/surf-router#^0.0.1"
+    }
+                </code></pre>
                 <h4>Features</h4>
                 <ul>
                     <li>Resolve data before route loads</li>
@@ -32,16 +42,16 @@
                     <li>Lazily load imports to reduce application boot time</li>
                 </ul>
                 <h4>Design Goals</h4>
-                <p class="text">
+                <p>
                     Polymer components can either be downloaded/imported and upgraded on the initial page load, or can be dynamically imported as they are needed.
                     While the latter results in a faster initial page load, it can affect the responsiveness of the application since a route change may result in a download to import the new elements.<br/>
                 </p>
-                <p class="text">
+                <p>
                     Loading all elements upfront will prevent this, and allows more efficient compaction through vulcanization.
                     However, in a large application may take an unacceptable amount of time to process all of the elements.
                     Additionally, there may be portions of the application that are rarely used - downloading, importing, and processing are unnecessary.
                 </p>
-                <p class="text">
+                <p>
                     A major design goal of surf-router is to enable the developer to choose which elements should be loaded upfront or dynamically.<br/>
                     For example, elements on the critical path can be loaded on-page load, and lesser used elements dynamically.
                 </p>

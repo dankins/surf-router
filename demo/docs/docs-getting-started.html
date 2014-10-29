@@ -17,14 +17,54 @@
             </core-toolbar>
             <div>
                 <p>
-                    All surf-router apps should start with a root element that will contain the rest of your application.
-                    This element should have a <i>routes</i> object that contains all of the routes/pages in your app.
-
+                    All surf-router apps start with a root element that will contain the rest of your application.
+                    This element has a <i>routes</i> object that contains all of the routes/pages in your app.
+                </p>
+                <p>
                     See <route-link state="docs.dynamicparameters">route parameters</route-link> for all of the options in a route, but
                     very basic example is as follows:
                 </p>
 
                 <github-gist gistid="8de8d35bb556f9b9d9a2"></github-gist>
+
+                <h3>HTML5 Mode</h3>
+                <p>
+                    The routes object is a nested object that represents all of the available states in your application.
+                    If you would like your URLs to be in "HTML5 mode" then set the base url to the empty string "".
+                    This will result in URLs like the following:
+                </p>
+                <blockquote>
+                    http://foo/bar/baz
+                </blockquote>
+                <p>
+                    For URLs that generally require less configuration on the server end, set the root URL to "#".
+                    This will result in URLs like the following:
+                </p>
+                <blockquote>
+                    http://foo/#/bar/baz
+                </blockquote>
+
+                <h3>Containers</h3>
+                <p>
+                    Each route state has a "container" property the determines the type of HTML element that will be displayed for that route.
+                    This will likely be a custom element you have created.
+                    Any child states will be displayed under the &lt;content&gt;&lt;/content&gt; element in the template.
+                </p>
+                <p>
+                    If the container property is not specified then a "surf-route-abstract" element will be used - which is just an empty template that will hold any child routes.
+                </p>
+                <h3>Imports</h3>
+                <p>
+                    The element used for the container may not have been registered and upgraded at the time the state is activated.
+                    The "imports" property is used to specify which files should be loaded before the state is activated.
+                    The value can be either a string containing a single file path or an array of files to import.
+                </p>
+                <p>
+
+                    The time the imports are loaded can be configured. For example, you may want to load critical-path elements on page-load or wait to load them until the route is actually activated.
+                    This lets you balance initial page load times vs application responsiveness.
+                    See <route-link state="docs.lazyloading">Lazy Loading</route-link> for more information.
+                </p>
 
             </div>
         </div>

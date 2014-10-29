@@ -9,13 +9,53 @@
         <core-style ref="base"></core-style>
         <div class="content" unresolved transition="slide-left">
             <core-toolbar>
-                <route-link state="docs.gettingstarted"><core-icon-button icon="arrow-back"></core-icon-button></route-link>
+                <route-link state="docs.routelinks"><core-icon-button icon="arrow-back"></core-icon-button></route-link>
                 <span>Transitions</span>
                 <span flex></span>
-                <route-link state="docs.routinglifecycle"><core-icon-button icon="arrow-forward"></core-icon-button></route-link>
             </core-toolbar>
             <div>
+                <p>
+                    When a state is activated, any elements in the container with the <i>unresolved</i> attribute will be removed and replaced with <i>resolved</i>.
+                    This allows you to apply transitions to individual elements within your container.
+                </p>
+                <p>Two CSS transitions are listed below:</p>
+                <pre><code>
+    [transition=fade][unresolved] {
+        opacity: 0;
+    }
+    [transition=fade] {
+        opacity: 1;
+        transition: opacity 500ms, background-color 2s;
+    }
 
+    [transition=slide-left][unresolved] {
+        transform: translateX(100%);
+    }
+    [transition=slide-left]:not([unresolved]) {
+        transition: transform 500ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+                </code></pre>
+                <p>
+                    The key is to have two selectors - one for when the <i>unresolved</i> attribute is applied, and another for when it is not.
+                    In the example above it selects elements having <i>transition="fade"</i>, however this can be any CSS selector you wish (.fade for example).
+                </p>
+
+                <p>
+                    One way to manage your transition styles is with <a href="https://www.polymer-project.org/docs/elements/core-elements.html#core-style">core-style</a>.
+                    You can put your transitions in a core-style with id="transitions" and then in your element import with a core-style with ref="transitions".
+                </p>
+
+                <p>
+                    I think it is worth stressing that you can apply transitions to any number of elements in your containers shadow DOM.
+                    This can result in a
+                </p>
+
+                <p>
+                    <small>
+                        Note: In a future release the router may look for a "delay" attribute and will wait that long before the resolved attribute is applied.
+                        This will enable greater control for when elements are introduced.
+                    </small>
+                </p>
             </div>
         </div>
 

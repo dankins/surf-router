@@ -9,13 +9,48 @@
         <core-style ref="base"></core-style>
         <div class="content" unresolved transition="slide-left">
             <core-toolbar>
-                <route-link state="docs.routinglifecycle"><core-icon-button icon="arrow-back"></core-icon-button></route-link>
+                <route-link state="docs.lazyloading"><core-icon-button icon="arrow-back"></core-icon-button></route-link>
                 <span>Dynamic Parameters</span>
                 <span flex></span>
-                <route-link state="docs.routinglifecycle"><core-icon-button icon="arrow-forward"></core-icon-button></route-link>
+                <route-link state="docs.resolvedata"><core-icon-button icon="arrow-forward"></core-icon-button></route-link>
             </core-toolbar>
             <div>
+                <p>
+                    Dynamic parameters can be specified by setting a colon in the state's URL property.
+                    For example, a URL of "/:myparam" will result in the "myparam" property of the <route-link state="docs.resolvedata">resolve data</route-link> being set with whatever value passed in by the URL.
+                </p>
 
+                <p>
+                    Continuing with the example above, to link to the state you can use a <i>route-link</i> element like so:
+                </p>
+                 <pre><code>
+    &ltroute-link state="mystate" data-myparam="foo"&gt;&lt;/route-link&gt;
+                 </code></pre>
+                <p>
+                    You could then use this to resolve data in a child state:
+                </p>
+                <pre><code>
+    resolve: {
+        someval: function(data){
+            return this.$.myservice.getFooById(data.myparam);
+        }
+    }
+                </code></pre>
+                <p>
+                    Or use it in the container template, assuming the state's initialize property is set "init":
+                </p>
+                <pre><code>
+    &lt;template&gt;
+        {{'\{{foo}\}'}}
+    &lt;/template&gt;
+    &lt;script&gt;
+    Polymer({
+        init: function(data) {
+            this.foo = data.myparam
+        }
+    })
+    &lt;/script&gt;
+                </code></pre>
             </div>
         </div>
 
