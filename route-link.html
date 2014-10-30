@@ -7,7 +7,7 @@
             text-decoration: inherit;
         }
     </style>
-    <a href="{{href}}" on-click="{{fireChange}}" draggable="false"><content></content></a>
+    <a href="{{href}}" on-tap="{{fireChange}}" draggable="false"><content></content></a>
 </template>
 <script>
 Polymer({
@@ -205,8 +205,13 @@ Polymer({
         var data = {};
         for (var i = 0, attrs = this.attributes, n = attrs.length; i < n; i++){
             var name = attrs[i].nodeName;
-            if(name.substring(0,5) === "data-"){
-                name = name.substring(5);
+            if(name.substring(0,6) === "param-" || name.substring(0,5) === "data-"){
+                if(name.substring(0,5) === "data-"){
+                    logger.log("warn:route-link","data-* is deprecated, please replace with param-");
+                    name = name.substring(5);
+                } else {
+                    name = name.substring(6);
+                }
                 data[name] = attrs[i].value;
             }
         }
@@ -240,7 +245,7 @@ Polymer({
         } else if (this.state === ">"){
             window.history.go(1);
         } else {
-            this.fire("route-change", {state: this.processed, url: this.href, relState: this.state});
+            this.fire("route-change", {state: this.processed, parameters: this.data});
         }
 
 
