@@ -1,4 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="logger.html">
 <link rel="import" href="surf-route.html">
 
 <!--
@@ -26,12 +27,25 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                  * @property routes
                  * @type object
                  */
-                routes: undefined
+                routes: undefined,
+                /**
+                 * If true, `skipInitialRoute` will not process the initial URL on page load
+                 * Set this to true for unit testing, otherwise you probably want
+                 * @property skipInitialRoute
+                 * @type boolean
+                 * @default false
+                 */
+                 skipInitialRoute: false
             },
             ready: function(){
+                logger.log("router:initialize","ready");
                 window.onpopstate = this.handlePopstate.bind(this);
             },
-            routesChanged: function(){
+            /**
+             * @event routes-ready fired after routing tree has been processed
+             */
+            routesChanged: function(old,newVal){
+                logger.log("router:initialize","routes changed",old,newVal);
                 window.xRoute = {
                     root: this,
                     ready: false,
@@ -44,19 +58,37 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                     // now that all of the routes are ready, process the URL route
                     window.xRoute.ready = true;
                     window.xRoute.tree = response;
-                    this.initialURL();
+                    logger.log("router:initialize","processed",xRoute.routes);
+                    this.fire("routes-ready");
+                    if(!this.skipInitialRoute){
+                        this.initialURL();
+                    }
 
                 }.bind(this));
             },
             initialURL: function(){
                 var tree = window.xRoute.tree;
-                var html5Mode = window.xRoute.root.url !== "#";
+                var html5Mode = tree.url !== "#";
                 var url = html5Mode ? window.location.pathname : window.location.hash.substring(1,window.location.hash.length);
                 var result = this.urlToState(tree,url);
-                this.$.root.route(result, url,"activate").then(function(response){
+                logger.log("router:initialize","html5Mode is %s",html5Mode);
+                logger.log("router:initialize","Starting with initial URL %s",url);
+
+                var event = {detail: {
+                    state: result,
+                    url: url,
+                    replace: true
+                }};
+
+                return this.handleRouteChange(event);
+
+                /*
+                return this.$.root.route(result, url,"activate").then(function(response){
+                    logger.log("router:initialize","Completed initial route",{result: result, url: url});
+                    this.fireRouteChangeComplete(request,parameters, response);
                     this.pushState(url,result,response,true);
                 }.bind(this));
-
+                */
             },
             /**
              *
@@ -66,6 +98,7 @@ Surf Router is a suite of Polymer web components that allows routing user interf
              * @param inTree
              */
             process: function(route,parent,state){
+                logger.log("router-debug:process-route",BRAGI.util.symbols.circle+"start",route,parent,state);
                 var tree = {};
                 var deferred = Q.defer();
                 // push  state->url map
@@ -96,8 +129,10 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                     }
 
                     // wait for all the children to resolve then resolve the current one
+                    logger.log("router-debug:process-route",BRAGI.util.symbols.success+" done - start children",route,parent,state);
                     Q.all(childrenPromises).then(function(children){
                         tree.childStates = children;
+                        logger.log("router-debug:process-route",BRAGI.util.symbols.circleFilled+" complete",route,parent,state,tree);
                         deferred.resolve(tree);
                     });
                 }.bind(this));
@@ -131,10 +166,11 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                     var state = request.state;
                     var url = request.url === undefined ? "" : request.url;
                     var data = request.data == undefined ? {} : request.data;
+                    var replace = request.replace == undefined ? false : request.replace;
 
 
                     this.$.root.route(state, url,"activate",data).then(function(response){
-                        this.pushState(request.url, request.state,response);
+                        this.pushState(request.url, request.state,response,replace);
                         this.fireRouteChangeComplete(request,parameters, response);
                     }.bind(this)).done();
                 }
@@ -151,6 +187,7 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                 }
             },
             handlePopstate: function(e){
+                logger.log("router","POP STATE",{state: e.state});
                 xRoute.history.pop();
                 if(e.state == undefined){
                     this.initialURL();
@@ -159,10 +196,12 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                     this.$.root.route(e.state.state, e.state.url,"activate");
                 }
             },
-            stateToUrl: function(routes,state){
+            stateToUrl: function(routes,state,parameters){
 
             },
-            urlToState: function(routes,url){
+            urlToState: function(routes,urlParam){
+                logger.log("router-debug:urlToState",urlParam,routes);
+                var url = urlParam.charAt(0) === "#" ? urlParam.substring(1,urlParam.length) : urlParam;
                 var idx = url.indexOf("/",1);
                 var segment = idx > 0 ? url.substring(0,idx) : url;
                 var urlRemaining = idx > 0 ? url.substring(idx,url.length) : "";
@@ -203,8 +242,8 @@ Surf Router is a suite of Polymer web components that allows routing user interf
              * @event route-change-start
              * @param {Object} detail contains whatever detail came from the `route-change` event
              */
-            fireRouteChangeStart: function(eventData){
-                this.fire("route-change-start",eventData);
+            fireRouteChangeStart: function(detail){
+                this.fire("route-change-start",detail);
             },
             /**
              * Fired after the route change is complete.

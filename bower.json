@@ -24,6 +24,8 @@
   "dependencies": {
     "polymer": "Polymer/polymer#^0.4.2",
     "polymer-test-tools": "Polymer/polymer-test-tools#^0.4.2",
-    "q": "1.0.1"
+    "web-component-tester": "Polymer/web-component-tester#^1.2.0",
+    "q": "1.0.1",
+    "bragi-browser": "enoex/bragi-browser#^0.0.9"
   }
 }
