@@ -19,6 +19,24 @@
 
     <!-- Step 1: import the element to test -->
     <link rel="import" href="../surf-router.html">
+
+    <polymer-element name="test-container">
+        <template>
+            <content></content>
+        </template>
+        <script>
+            Polymer({
+                resolve: {
+                    resolveA: function(){
+                        return "A";
+                    },
+                    resolveB: function(parameters,data){
+                        return parameters.dynamic;
+                    }
+                }
+            })
+        </script>
+    </polymer-element>
 </head>
 <body>
 
@@ -46,7 +64,26 @@
                 }
             },
             state2: {
-                url: "/state2"
+                url: "/state2",
+                children: {
+                    dynamic: {
+                        url: "/:dynamic",
+                        children: {
+                            hasresolve: {
+                                url: "/resolve",
+                                resolve: {
+                                    something: function(){
+                                        return "it works";
+                                    }
+                                }
+                            },
+                            resolveB: {
+                                url: "/resolveB",
+                                container: "test-container"
+                            }
+                        }
+                    }
+                }
             }
         }
     };
@@ -60,17 +97,74 @@
             router.routes = t.routes;
         });
 
-        test('test urlToState', function() {
+        test('test URL to State', function() {
+            logger.log("test","X",xRoute.tree);
             var res = router.urlToState(xRoute.tree,"/state1/sub1");
             assert.equal(res,"state1.sub1");
+
+            res = router.urlToState(xRoute.tree,"/state2/foobar");
+            assert.equal(res,"state2.dynamic");
+
+            res = router.urlToState(xRoute.tree,"/state2/foobar/resolve");
+            assert.equal(res,"state2.dynamic.hasresolve");
+        });
+
+        test("state to URL",function(){
+            var res = router.stateToUrl(router.routes,"state2");
+            assert.equal(res.url,"#/state2");
+
+            res = router.stateToUrl(router.routes,"state2.dynamic",{dynamic: "foobar"});
+            assert.equal(res.url,"#/state2/foobar");
+
+            res = router.stateToUrl(router.routes,"state2.dynamic.hasresolve",{dynamic: "foobar"});
+            assert.equal(res.url,"#/state2/foobar/resolve");
         });
 
         test("test initialURL",function(done) {
             window.location.hash = "/state2";
-            router.addEventListener("route-change-complete", function (e) {
+            function callback(e) {
                 logger.log("test", "route change", e.detail.request);
+                router.removeEventListener("route-change-complete",callback);
                 done();
-            });
+            }
+
+            router.addEventListener("route-change-complete",callback );
+
+        });
+
+
+        test("test routing",function(done){
+            var event = {detail: { state: "state1.sub1" }};
+
+            router.handleRouteChange(event).then(function(r1){
+                logger.log("test","done first",window.location.href);
+                var event2 = {detail: { state: "state2" }};
+                assert.equal(r1.request.state,"state1.sub1");
+                return router.handleRouteChange(event2)
+            }).then(function(response){
+                logger.log("test","routing done",response,window.location.href);
+                assert.equal(window.location.hash,"#/state2");
+                assert.equal(response.request.state,"state2");
+                done();
+            }).done();
+        });
+
+        test("test resolve from routes",function(done){
+            var event = {detail: { state: "state2.dynamic.hasresolve", parameters: {dynamic: "foobar"} }};
+            router.handleRouteChange(event).then(function(response){
+                logger.log("test","resolve done",response.resolved);
+                assert.equal(response.resolved.something,"it works");
+                done();
+            }).done();
+        });
+
+        test("test resolve from container",function(done){
+            var event = {detail: { state: "state2.dynamic.resolveB", parameters: {dynamic: "foobar"} }};
+            router.handleRouteChange(event).then(function(response){
+                logger.log("test","resolve done",response.resolved);
+                assert.equal(response.resolved.resolveB,response.parameters.dynamic,"foobar");
+                done();
+            }).done();
         });
     });
 </script>
