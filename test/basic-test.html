@@ -98,15 +98,16 @@
         });
 
         test('test URL to State', function() {
-            logger.log("test","X",xRoute.tree);
             var res = router.urlToState(xRoute.tree,"/state1/sub1");
-            assert.equal(res,"state1.sub1");
+            assert.equal(res.state,"state1.sub1");
 
             res = router.urlToState(xRoute.tree,"/state2/foobar");
-            assert.equal(res,"state2.dynamic");
+            logger.log("test","RESULT",res);
+            assert.equal(res.state,"state2.dynamic");
+            assert.equal(res.parameters.dynamic,"foobar");
 
             res = router.urlToState(xRoute.tree,"/state2/foobar/resolve");
-            assert.equal(res,"state2.dynamic.hasresolve");
+            assert.equal(res.state,"state2.dynamic.hasresolve");
         });
 
         test("state to URL",function(){

@@ -75,8 +75,8 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                 logger.log("router:initialize","Starting with initial URL %s",url);
 
                 var event = {detail: {
-                    state: result,
-                    url: url,
+                    state: result.state,
+                    parameters: result.parameters,
                     replace: true
                 }};
 
@@ -121,7 +121,7 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                     }
 
                     // wait for all the children to resolve then resolve the current one
-                    logger.log("router-debug:process-route",BRAGI.util.symbols.success+" done - start children",route,parent,state);
+                    logger.log("router-debug:process-route",BRAGI.util.symbols.success+" done - start children",route,state);
                     Q.all(childrenPromises).then(function(children){
                         tree.childStates = children;
                         logger.log("router-debug:process-route",BRAGI.util.symbols.circleFilled+" complete",route,parent,state,tree);
@@ -225,8 +225,9 @@ Surf Router is a suite of Polymer web components that allows routing user interf
 
                 return {url: res.url, parameters: res.parameters};
             },
-            urlToState: function(routes,urlParam){
-                logger.log("router-debug:urlToState",urlParam,routes);
+            urlToState: function(routes,urlParam,inParam){
+                var parameters = inParam === undefined ? {} : inParam;
+                logger.log("router-debug:urlToState",urlParam,routes,parameters);
                 var url = urlParam.charAt(0) === "#" ? urlParam.substring(1,urlParam.length) : urlParam;
                 var idx = url.indexOf("/",1);
                 var segment = idx > 0 ? url.substring(0,idx) : url;
@@ -250,16 +251,20 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                         selected = result.exact
                     }  else if(result.dynamic !== undefined){
                         selected = result.dynamic;
+                        var name = selected.url.substring(2,selected.url.length);
+                        parameters[name] = segment.substring(1,segment.length);
                     } else if(result.default !== undefined){
                         selected = result.default;
                         // we didn't actually consume this part of the URL, so put it back on
                         urlRemaining = urlRemaining === undefined ? segment : segment + urlRemaining;
                     } else {
-                        return routes.fullState;
+                        return { state: routes.fullState, parameters: parameters };
                     }
-                    return this.urlToState(selected,urlRemaining);
+                    return this.urlToState(selected,urlRemaining,parameters);
                 } else {
-                    return routes.fullState;
+                    var rtn = { state: routes.fullState, parameters: parameters };
+                    logger.log("router-debug:urlToState","complete",rtn);
+                    return rtn;
                 }
 
             },
