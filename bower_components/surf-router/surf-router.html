@@ -58,7 +58,9 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                     // now that all of the routes are ready, process the URL route
                     window.xRoute.ready = true;
                     window.xRoute.tree = response;
-                    logger.log("router:initialize","processed",xRoute.routes);
+                    this.html5Mode = window.xRoute.tree.url !== "#";
+                    logger.log("router:initialize","html5Mode is %s",this.html5Mode);
+                    logger.log("router:initialize","processed",xRoute.tree);
                     this.fire("routes-ready");
                     if(!this.skipInitialRoute){
                         this.initialURL();
@@ -68,10 +70,8 @@ Surf Router is a suite of Polymer web components that allows routing user interf
             },
             initialURL: function(){
                 var tree = window.xRoute.tree;
-                var html5Mode = tree.url !== "#";
-                var url = html5Mode ? window.location.pathname : window.location.hash.substring(1,window.location.hash.length);
+                var url = this.html5Mode ? window.location.pathname : window.location.hash.substring(1,window.location.hash.length);
                 var result = this.urlToState(tree,url);
-                logger.log("router:initialize","html5Mode is %s",html5Mode);
                 logger.log("router:initialize","Starting with initial URL %s",url);
 
                 var event = {detail: {
@@ -176,9 +176,11 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                 }
 
             },
-            pushState: function(url,state,data,replace){
+            pushState: function(urlParam,state,data,replace){
+                var url = this.html5Mode ? urlParam : window.location.pathname + "#" + urlParam;
                 var push = { data: data, state: state, url: url  };
                 window.xRoute.current = push;
+                logger.log("router-debug","pushing state",push);
                 xRoute.history.push(push);
                 if(replace){
                     history.replaceState(push,undefined,url);

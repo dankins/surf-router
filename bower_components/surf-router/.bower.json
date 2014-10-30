@@ -32,7 +32,7 @@
   "_resolution": {
     "type": "version",
     "tag": "0.0.2",
-    "commit": "a19764fe572864b98a0094b351a28c3a29cd0976"
+    "commit": "c58e9999c0694f254aa0f2410c976191194e3165"
   },
   "_source": "git://github.com/surfapp/surf-router.git",
   "_target": "^0.0.2",
