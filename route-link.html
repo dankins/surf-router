@@ -1,6 +1,12 @@
 <link rel="import" href="../polymer/polymer.html">
 <polymer-element name="route-link">
 <template>
+    <style>
+        a, a:visited, a:hover {
+            color: inherit;
+            text-decoration: inherit;
+        }
+    </style>
     <a href="{{href}}" on-click="{{fireChange}}" draggable="false"><content></content></a>
 </template>
 <script>
