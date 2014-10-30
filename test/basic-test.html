@@ -65,16 +65,13 @@
             assert.equal(res,"state1.sub1");
         });
 
-        test("test initialURL",function(done){
+        test("test initialURL",function(done) {
             window.location.hash = "/state2";
-            router.addEventListener("route-change-complete",function(e){
-               logger.log("test", "route change", e.detail.request);
+            router.addEventListener("route-change-complete", function (e) {
+                logger.log("test", "route change", e.detail.request);
                 done();
             });
-
         });
-
-
     });
 </script>
 
