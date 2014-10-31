@@ -74,13 +74,13 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                 var result = this.urlToState(tree,url);
                 logger.log("router:initialize","Starting with initial URL %s",url);
 
-                var event = {detail: {
+                var event = {
                     state: result.state,
                     parameters: result.parameters,
                     replace: true
-                }};
+                };
 
-                return this.handleRouteChange(event);
+                return this.route(event);
             },
             /**
              *
@@ -146,12 +146,15 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                 }
             },
             handleRouteChange: function(e){
-                var request = e.detail;
-                this.fireRouteChangeStart(e.detail);
-                logger.log("router-debug","starting route change", e.detail);
+                e.stopPropagation();
+                return this.route(e.detail);
+            },
+            route: function(request){
+                this.fireRouteChangeStart(request);
+                logger.log("router-debug","starting route change", request);
 
 
-                if(e.detail.state === "<"){
+                if(request.state === "<"){
                     history.back();
                     //this.fireRouteChangeComplete(request,undefined, "back");
                     return Q.when("back");
@@ -173,10 +176,10 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                         };
                     }.bind(this));
                 }
-
             },
             pushState: function(urlParam,state,parameters,data,replace){
-                var url = this.html5Mode ? urlParam : window.location.pathname + urlParam;
+                var url = this.html5Mode ? (urlParam == "" ? "/" : urlParam) : window.location.pathname + urlParam;
+
                 var push = { data: {parameters: parameters, resolved: data}, state: state, url: url  };
                 window.xRoute.current = push;
                 logger.log("router-debug","pushing state",push);
@@ -195,11 +198,11 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                 } else {
                     //var url = e.state.url.substring(this.$.root.url.length+1,e.state.url.length);
                     //this.$.root.route(e.state.state, e.state.parameters,"activate");
-                    var event = {detail:{
+                    var event = {
                         state: e.state.state,
                         parameters: e.state.data.parameters
-                    }};
-                    this.handleRouteChange(event);
+                    };
+                    this.route(event);
                 }
             },
             stateToUrl: function(routes,state,parameters){
