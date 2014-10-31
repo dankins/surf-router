@@ -163,7 +163,7 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                     return this.$.root.route(state, parameters,"activate").then(function(response){
                         var url = this.stateToUrl(this.routes,state,parameters);
                         request.url = url.url;
-                        this.pushState(request.url, request.state,response,replace);
+                        this.pushState(request.url, request.state, request.parameters,response,replace);
                         this.fireRouteChangeComplete(request,parameters, response);
                         logger.log("router-debug","routing complete",state,response);
                         return {
@@ -175,9 +175,9 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                 }
 
             },
-            pushState: function(urlParam,state,data,replace){
+            pushState: function(urlParam,state,parameters,data,replace){
                 var url = this.html5Mode ? urlParam : window.location.pathname + urlParam;
-                var push = { data: data, state: state, url: url  };
+                var push = { data: {parameters: parameters, resolved: data}, state: state, url: url  };
                 window.xRoute.current = push;
                 logger.log("router-debug","pushing state",push);
                 xRoute.history.push(push);
@@ -194,7 +194,12 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                     this.initialURL();
                 } else {
                     //var url = e.state.url.substring(this.$.root.url.length+1,e.state.url.length);
-                    this.$.root.route(e.state.state, e.state.url,"activate");
+                    //this.$.root.route(e.state.state, e.state.parameters,"activate");
+                    var event = {detail:{
+                        state: e.state.state,
+                        parameters: e.state.parameters
+                    }};
+                    this.handleRouteChange(event);
                 }
             },
             stateToUrl: function(routes,state,parameters){
