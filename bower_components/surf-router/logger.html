@@ -1,4 +1,9 @@
 <script src="../bragi-browser/dist/bragi.min.js"></script>
 <script>
-    window.logger = BRAGI
+    window.logger = BRAGI;
+    BRAGI.options.groupsEnabled = true;
+    BRAGI.options.groupsDisabled = [
+        'route-debug',
+         'router-debug'
+    ];
 </script>
