@@ -197,7 +197,7 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                     //this.$.root.route(e.state.state, e.state.parameters,"activate");
                     var event = {detail:{
                         state: e.state.state,
-                        parameters: e.state.parameters
+                        parameters: e.state.data.parameters
                     }};
                     this.handleRouteChange(event);
                 }
