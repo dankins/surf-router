@@ -9,7 +9,6 @@
  */
 var chalk  = require('chalk');
 var events = require('events');
-var findup = require('findup');
 var path   = require('path');
 
 var CliReporter = require('./clireporter');
@@ -17,28 +16,36 @@ var config      = require('./config');
 var steps       = require('./steps');
 var test        = require('./test');
 
+var PACKAGE_INFO   = require('../package.json');
+var updateNotifier = require('update-notifier')({
+  packageName:    PACKAGE_INFO.name,
+  packageVersion: PACKAGE_INFO.version,
+});
+
 function run(env, args, output, callback) {
-  var done = wrapCallback(output, callback);
-
-  var options = config.mergeDefaults(config.fromEnv(env, args));
-  options.output = output;
-
+  var done    = wrapCallback(output, callback);
+  var options = config.fromEnv(env, args, output);
   if (options.extraArgs[0]) {
-    return runTests(options.extraArgs[0], options, done);
+    options.projectRoot = options.extraArgs[0];
+  }
+  if (!options.projectRoot) {
+    return done('Could not find the project root. Please run wct from your web component\'s directory, or pass the path as an argument to wct.');
   }
 
-  findup(process.cwd(), options.webRunner, function(error, dir) {
-    if (error) {
-      return done('Could not find a valid test root. Searched for "' + options.webRunner + '".');
-    }
-    runTests(dir, options, done);
-  });
+  var root = path.resolve(options.projectRoot);
+  try {
+    process.chdir(root);
+  } catch (error) {
+    return done('Unable to run tests within "' + root + '": ' + error);
+  }
+
+  test(options, done);
 }
 
 function runSauceTunnel(env, args, output, callback) {
   var done = wrapCallback(output, callback);
 
-  var options = config.mergeDefaults(config.fromEnv(env, args));
+  var options = config.fromEnv(env, args, output);
   var emitter = new events.EventEmitter();
   new CliReporter(emitter, output, options);
 
@@ -54,6 +61,8 @@ function runSauceTunnel(env, args, output, callback) {
 
 function wrapCallback(output, done) {
   return function(error) {
+    updateNotifier.notify({defer: false});
+
     if (error) {
       output.write('\n');
       output.write(chalk.red(error) + '\n');
@@ -61,17 +70,6 @@ function wrapCallback(output, done) {
     }
     done(error);
   };
-}
-
-function runTests(workingDir, options, done) {
-  var root = path.resolve(workingDir);
-  try {
-    process.chdir(root);
-  } catch (error) {
-    return done('Unable to run tests within "' + root + '": ' + error);
-  }
-
-  test(options, done);
 }
 
 module.exports = {

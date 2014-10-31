@@ -7,12 +7,17 @@
  * Code distributed by Google as part of the polymer project is also
  * subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
  */
-var _     = require('lodash');
-var chalk = require('chalk');
-var path  = require('path');
-var yargs = require('yargs');
+var _      = require('lodash');
+var chalk  = require('chalk');
+var findup = require('findup-sync');
+var fs     = require('fs');
+var path   = require('path');
+var yargs  = require('yargs');
 
 var browsers = require('./browsers');
+
+var HOME_DIR    = path.resolve(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE);
+var CONFIG_NAME = 'wct.conf.js';
 
 // The full set of options, as a reference.
 function defaults() {
@@ -87,6 +92,7 @@ function parseArgs(args) {
         'remote': {
           description: 'Use default remote browsers (instead of local).',
           alias: 'r',
+          boolean: true,
         },
         'browsers': {
           description: 'Run specific browsers, rather than the defaults.',
@@ -99,18 +105,21 @@ function parseArgs(args) {
         'persistent': {
           description: 'Keep browsers active (refresh to rerun tests).',
           alias: 'p',
+          boolean: true,
         },
         'expanded': {
           description: 'Log a status line for each test run.',
+          boolean: true,
         },
         'verbose': {
           description: 'Log all the things.',
+          boolean: true,
         },
       })
       .argv;
 }
 
-function fromEnv(env, args) {
+function fromEnv(env, args, output) {
   var argv = parseArgs(args);
 
   var options = {
@@ -119,6 +128,8 @@ function fromEnv(env, args) {
     expanded:   Boolean(argv.expanded), // override the default of true.
     persistent: argv.persistent,
     remote:     Boolean(argv.remote),
+    output:     output,
+    ttyOutput:  output.isTTY,
     sauce: {
       username:  env.SAUCE_USERNAME,
       accessKey: env.SAUCE_ACCESS_KEY,
@@ -134,24 +145,36 @@ function fromEnv(env, args) {
 
   options.extraArgs = argv._;
 
+  options = _.merge(defaults(), fromDisk(), options);
+  // Now that we have a fully specified set of options, project root:
+  if (!options.projectRoot) {
+    var webRunnerPath = findup(options.webRunner);
+    if (webRunnerPath) {
+      options.projectRoot = webRunnerPath.slice(0, -options.webRunner.length);
+    }
+  }
+
   return options;
 }
 
-function mergeDefaults(options) {
-  var baseOptions = defaults();
+function fromDisk() {
+  var globalFile  = path.join(HOME_DIR, CONFIG_NAME);
+  var projectFile = findup(CONFIG_NAME, {nocase: true});
+  // Load a shared config from the user's home dir, if they have one, and then
+  // try the project-specific path (starting at the current working directory).
+  var paths   = _.unique([globalFile, projectFile]);
+  var configs = _.filter(paths, fs.existsSync).map(require);
+  var options = _.merge.apply(_, [{}].concat(configs));
 
-  _.defaults(options,       baseOptions);
-  _.defaults(options.sauce, baseOptions.sauce);
-
-  if (typeof(options.ttyOutput) === 'undefined') {
-    options.ttyOutput = options.output.isTTY;
+  if (projectFile && projectFile !== globalFile) {
+    options.projectRoot = projectFile.slice(0, -CONFIG_NAME.length);
   }
 
   return options;
 }
 
 module.exports = {
-  defaults:      defaults,
-  fromEnv:       fromEnv,
-  mergeDefaults: mergeDefaults,
+  defaults: defaults,
+  fromEnv:  fromEnv,
+  fromDisk: fromDisk,
 };
