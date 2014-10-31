@@ -20,7 +20,11 @@
                     Any data resolved from a parent state will be available to the child.
                     The state will look for a <i>resolve</i> property on the container and will then execute all of the functions contained therein.
                     The resulting values will be passed into the <i>initialize</i> function to allow you to use the them in the container.
+                    For example, this page resolved "theTime" as seen below:
                 </p>
+                <div>
+                    <strong>Current Date</strong> {{theTime}}
+                </div>
                 <p>
                     All of the resolved data are wrapped as promises using the <a href="https://github.com/kriskowal/q">Q library</a>.
                     It is recommended to use the Q library to wrap API calls to prevent resolves from blocking.
@@ -28,7 +32,7 @@
                 </p>
                 <pre><code>
     resolve: {
-        foo: function(data){
+        foo: function(params,data){
             var deferred = Q.defer();
             var id = data.id;
             this.async(function(){
@@ -41,7 +45,7 @@
             var srv = new ApiRequest("GET","/foo/bar/"+data.id)
             return srv.run(); // return a promise directly
         },
-        baz: function(data){
+        baz: function(params,data){
             return -1; // you can return the value directly instead of a promise if you prefer
         }
     },
@@ -57,6 +61,8 @@
                     The default value for a state's <i>resolve</i> property is "container".
                     This indicates that the state will look for a "resolve" property in the container element.
                     If the <i>resolve</i> property is an object it will resolve the data in the context of the container.
+                    After the resolves are complete the "init" function will be run with the URL parameters and resolved data passed in.
+                    By default it will look for a function named "init" but this can be overridden with the "initialize" property in the route parameter.
                 </p>
                 <p>Example routes object:</p>
                 <pre><code>
@@ -77,7 +83,7 @@
                     children: {
                         bar: { // complete state is foo.bar
                             url: "/bar" // complete url is /foo/bar
-                            initialize: function(data){ // this could instead be run under the container if the property was a string instead of function
+                            initialize: function(params,data){ // this could instead be run under the container if the property was a string instead of function
                                 console.log(data) // should output foovalue, and whatever was resolved in "bar"
                             }
                         }
@@ -95,7 +101,24 @@
     </template>
     <script>
         Polymer({
+            resolve: {
+                theTime: function(){
+                    var currentdate = new Date();
+                    return currentdate.getDate() + "/"
+                            + (currentdate.getMonth()+1)  + "/"
+                            + currentdate.getFullYear() + " @ "
+                            + currentdate.getHours() + ":"
+                            + currentdate.getMinutes() + ":"
+                            + currentdate.getSeconds();
 
+                },
+                resolveB: function(params,data){
+                    return -1;
+                }
+            },
+            init: function(params,data){
+                this.theTime = data.theTime;
+            }
         })
     </script>
 </polymer-element>

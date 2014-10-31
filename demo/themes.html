@@ -1,16 +1,13 @@
 <link rel="import" href="../bower_components/core-style/core-style.html">
 <link rel="import" href="animations.html">
 <core-style id="base">
-    :host /deep/ route-link::shadow a, :host /deep/ route-link::shadow a:visited {
-        text-decoration: none;
-    }
 
     pre {
-    white-space: pre-wrap;       /* CSS 3 */
-    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
-    white-space: -pre-wrap;      /* Opera 4-6 */
-    white-space: -o-pre-wrap;    /* Opera 7 */
-    word-wrap: break-word;       /* Internet Explorer 5.5+ */
+        white-space: pre-wrap;       /* CSS 3 */
+        white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+        white-space: -pre-wrap;      /* Opera 4-6 */
+        white-space: -o-pre-wrap;    /* Opera 7 */
+        word-wrap: break-word;       /* Internet Explorer 5.5+ */
     }
 
     core-toolbar.main {
@@ -45,25 +42,29 @@
     }
 
 
-    :host /deep/ a, :host /deep/ a:visited {
+    core-item > a, core-item > a:visited {
         text-decoration: none;
+        color: #333;
+        margin-top: 5px;
     }
 
-    :host /deep/ core-item > route-link::shadow a, :host /deep/ core-item > route-link::shadow a:visited {
+    p > a, p > a:visited
+    li > a, li > a:visited {
     text-decoration: none;
-        color: #333
+    color: #e91e63
     }
-    :host /deep/ p > route-link::shadow a,
+
+    :host /deep/ p > route-link,
     :host /deep/ li > route-link::shadow a,
     :host /deep/ p > route-link::shadow a:visited,
-    :host /deep/ li > route-link::shadow a:visited {
+    :host /deep/ li > route-link::shadow a:visited
+    {
         text-decoration: none;
         color: #e91e63
     }
 
-    a, a:visited {
-        color: #e91e63
-    }
+
+
 
 
     {{list.animations.cssText}}

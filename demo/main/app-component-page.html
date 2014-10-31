@@ -1,0 +1,32 @@
+
+<link rel="import" href="../../bower_components/core-component-page-dev/core-component-page.html">
+<link rel="import" href="../../bower_components/core-style/core-style.html">
+
+<polymer-element name="app-component-page">
+    <template>
+        <core-style ref="base"></core-style>
+        <style>
+            :host {
+                width: 100%;
+            }
+            div {
+                background-color: white;
+                width: 700px;
+            }
+            iframe {
+                height: 600px;
+                width: 100%;
+            }
+        </style>
+
+        <div class="content">
+            <iframe src="/surf-router-demo/bower_components/surf-router"></iframe>
+        </div>
+    </template>
+    <script>
+        Polymer({
+            moduleName: "surf-router",
+            sources: ["/surf-router-demo/bower_components/surf-router/surf-router.html"]
+        });
+    </script>
+</polymer-element>

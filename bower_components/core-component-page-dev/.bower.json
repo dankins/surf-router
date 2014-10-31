@@ -1,0 +1,18 @@
+{
+  "name": "core-component-page-dev",
+  "private": true,
+  "dependencies": {
+    "core-doc-viewer": "Polymer/core-doc-viewer#^0.4.0"
+  },
+  "homepage": "https://github.com/Polymer/core-component-page-dev",
+  "version": "0.4.2",
+  "_release": "0.4.2",
+  "_resolution": {
+    "type": "version",
+    "tag": "0.4.2",
+    "commit": "0540e0cb73311a9185478a4d74208784e6171785"
+  },
+  "_source": "git://github.com/Polymer/core-component-page-dev.git",
+  "_target": "^0.4.2",
+  "_originalSource": "Polymer/core-component-page-dev"
+}

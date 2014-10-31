@@ -69,6 +69,16 @@
                                 }
                             }
 
+                        },
+                        components: {
+                            url: "/components",
+                            children: {
+                                router: {
+                                    url: "/surf-router",
+                                    container: "app-component-page",
+                                    imports: "demo/main/app-component-page.html"
+                                }
+                            }
                         }
                     }
                 }

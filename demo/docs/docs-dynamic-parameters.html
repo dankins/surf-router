@@ -31,8 +31,8 @@
                 </p>
                 <pre><code>
     resolve: {
-        someval: function(data){
-            return this.$.myservice.getFooById(data.myparam);
+        someval: function(params,resolved){
+            return this.$.myservice.getFooById(params.myparam);
         }
     }
                 </code></pre>

@@ -45,7 +45,7 @@
             var event = {
                 message: "Action completed!", // this is not needed (see below)
                 state: "foo.bar", // this is the only required property
-                data: { bar: "bardata" }
+                parameters: { bar: "bardata" }
             };
 
             this.fire("route-change",event);
