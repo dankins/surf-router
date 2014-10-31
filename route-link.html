@@ -149,7 +149,7 @@ Polymer({
                 //var attr = this.getAttribute("data-"+name);
 
                 if(dataVal === undefined || dataVal === null) {
-                    console.log("Expecting to find attribute with name data-"+ name + " on route link",this);
+                    console.log("Expecting to find attribute with name param-"+ name + " on route link",this);
                 }
 
                 acc.segments[acc.idx] = {
@@ -205,13 +205,8 @@ Polymer({
         var data = {};
         for (var i = 0, attrs = this.attributes, n = attrs.length; i < n; i++){
             var name = attrs[i].nodeName;
-            if(name.substring(0,6) === "param-" || name.substring(0,5) === "data-"){
-                if(name.substring(0,5) === "data-"){
-                    logger.log("warn:route-link","data-* is deprecated, please replace with param-");
-                    name = name.substring(5);
-                } else {
-                    name = name.substring(6);
-                }
+            if(name.substring(0,6) === "param-"){
+                name = name.substring(6);
                 data[name] = attrs[i].value;
             }
         }
@@ -226,8 +221,8 @@ Polymer({
         var d = this.data;
         var target = this;
         mutations.forEach(function(mutation) {
-            if(mutation.attributeName.substring(0,5) === "data-"){
-                var stub = mutation.attributeName.substring(5);
+            if(mutation.attributeName.substring(0,6) === "param-"){
+                var stub = mutation.attributeName.substring(6);
                 d[stub] = target.getAttribute(mutation.attributeName);
                 if(target.ready){
                     target.replaceSegment(stub);
