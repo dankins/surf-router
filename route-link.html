@@ -22,7 +22,6 @@ Polymer({
         this.segmentMap = {};
     },
     inputDataChanged: function(){
-        console.log("input data changed",this.inputData);
         if(this.inputData !== undefined){
             this.data = this.inputData;
         }
@@ -234,7 +233,7 @@ Polymer({
         if (e != undefined) {
             e.preventDefault();
         }
-        console.log(this.href,this.state);
+        logger.log("route-link","requesting state: %s",this.processed, this.state,this.data);
         if(this.state === "<"){
             window.history.go(-1);
         } else if (this.state === ">"){
