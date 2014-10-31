@@ -240,7 +240,8 @@ Polymer({
         } else if (this.state === ">"){
             window.history.go(1);
         } else {
-            this.fire("route-change", {state: this.processed, parameters: this.data});
+            xRoute.root.route({state: this.processed, parameters: this.data});
+            //this.fire("route-change", {state: this.processed, parameters: this.data});
         }
 
 
