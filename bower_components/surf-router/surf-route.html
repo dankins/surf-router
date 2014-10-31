@@ -211,24 +211,35 @@ Polymer({
         }
     },
     _initialize: function(parameters,data){
-        logger.log("route-debug:_initialize","start %s",this.fullState,parameters,data);
+        var state = this.fullState;
+        logger.log("route-trace:_initialize","start %s",state,parameters,data);
         this.execIfDefined(this.initialize,this.$.container,[parameters,data]);
         var elems = this.$.container.shadowRoot.querySelectorAll("[unresolved]");
-        for(var i = 0; i<elems.length; i++){
-            elems[i].setAttribute("resolved","");
-            elems[i].removeAttribute("unresolved");
+        logger.log("route-trace:_initialize","elements %s",elems);
+
+        function reveal(element){
+            logger.log("route-trace:_initialize","revealing",state,element);
+            element.setAttribute("resolved","");
+            element.removeAttribute("unresolved");
         }
-        logger.log("route-debug:_initialize","complete %s",this.fullState,parameters,data);
+
+        for(var i = 0; i<elems.length; i++){
+            var delay = elems[i].getAttribute("delay");
+            delay = delay === undefined || delay === null ? 0 : parseInt(delay);
+            logger.log("route-trace:_initialize","delay %s : %s",state,delay,elems[i]);
+            this.async(reveal,elems[i],delay);
+        }
+        logger.log("route-trace:_initialize","complete %s",this.fullState,parameters,data);
     },
     _teardown: function(){
-        logger.log("route-debug:_teardown","start %s",this.fullState);
+        logger.log("route-trace:_teardown","start %s",this.fullState);
         this.execIfDefined(this.teardown,this.$.container,[{}]);
         var elems = this.$.container.shadowRoot.querySelectorAll("[resolved]");
         for(var i = 0; i<elems.length; i++){
             elems[i].removeAttribute("resolved");
             elems[i].setAttribute("unresolved","");
         }
-        logger.log("route-debug:_teardown","complete %s",this.fullState);
+        logger.log("route-trace:_teardown","complete %s",this.fullState);
     },
     execIfDefined: function(funcName,target,params){
         if(funcName !== undefined && typeof target[funcName] === 'function'){
@@ -238,7 +249,7 @@ Polymer({
         }
     },
     _activate: function(parameters,data){
-        logger.log("route-debug:_activate","start %s",this.fullState,parameters,data);
+        logger.log("route-trace:_activate","start %s",this.fullState,parameters,data);
         var deferred = Q.defer();
         var init = this._initialize.bind(this,parameters);
         var container = this.$.container;
@@ -251,14 +262,14 @@ Polymer({
             this.$.container.setAttribute('resolved', '');
             this.$.container.removeAttribute('unresolved');
             deferred.resolve(finalData);
-            logger.log("route-debug:_activate","complete %s",this.fullState,finalData);
+            logger.log("route-trace:_activate","complete %s",this.fullState,finalData);
         }
         this.upgradeContainer().then(this._resolve.bind(this,parameters,data)).then(complete.bind(this));
 
         return deferred.promise;
     },
     _deactivate: function(){
-        logger.log("route-debug:_deactivate","start %s",this.fullState);
+        logger.log("route-trace:_deactivate","start %s",this.fullState);
         var deferred = Q.defer();
         if(this.active){
             //console.log("deactivate:",this.state);
@@ -268,11 +279,11 @@ Polymer({
         this.active = false;
         this.hidden = true;
         deferred.resolve("ok");
-        logger.log("route-debug:_deactivate","complete %s",this.fullState);
+        logger.log("route-trace:_deactivate","complete %s",this.fullState);
         return deferred.promise;
     },
     _resolve: function(parameters,data){
-        logger.log("route-debug:_resolve","start %s",this.fullState,parameters,data);
+        logger.log("route-trace:_resolve","start %s",this.fullState,parameters,data);
         //deferred.resolve("resolved");
         var res = undefined;
 
@@ -281,20 +292,20 @@ Polymer({
             return this.resolveData(parameters,data,res).then(function(response){
                 this.$.container.data = response;
                 this.data = response;
-                logger.log("route-debug:_resolve","complete %s",this.fullState,response);
+                logger.log("route-trace:_resolve","complete %s",this.fullState,response);
                 return response;
             }.bind(this))
         }
         else if(typeof this.resolve === "object"){
             return this.resolveData(parameters,data,this.resolve).then(function(response){
-                logger.log("route-debug:_resolve","complete %s",this.fullState,response);
+                logger.log("route-trace:_resolve","complete %s",this.fullState,response);
                 this.$.container.data = response;
                 this.data = response;
                 return response;
             }.bind(this));
         }
         else {
-            logger.log("route-debug:_resolve","complete (no resolve) %s",this.fullState);
+            logger.log("route-trace:_resolve","complete (no resolve) %s",this.fullState);
             return Q.when(data);
         }
     },
@@ -337,7 +348,7 @@ Polymer({
         });
     },
     route: function(relativeState,parameters,action,inData){
-        logger.log("route-debug:route","starting %s",relativeState,parameters,action,inData);
+        logger.log("route-trace:route","starting %s",relativeState,parameters,action,inData);
         var data = inData === undefined ? {} : inData;
 
         var states = relativeState.split(".");

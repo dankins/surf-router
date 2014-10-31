@@ -42,7 +42,8 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                 window.onpopstate = this.handlePopstate.bind(this);
             },
             /**
-             * @event routes-ready fired after routing tree has been processed
+             * Fired after routing tree has been processed
+             * @event routes-ready
              */
             routesChanged: function(old,newVal){
                 logger.log("router:initialize","routes changed",old,newVal);
@@ -74,13 +75,13 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                 var result = this.urlToState(tree,url);
                 logger.log("router:initialize","Starting with initial URL %s",url);
 
-                var event = {detail: {
-                    state: result,
-                    url: url,
+                var event = {
+                    state: result.state,
+                    parameters: result.parameters,
                     replace: true
-                }};
+                };
 
-                return this.handleRouteChange(event);
+                return this.route(event);
             },
             /**
              *
@@ -121,7 +122,7 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                     }
 
                     // wait for all the children to resolve then resolve the current one
-                    logger.log("router-debug:process-route",BRAGI.util.symbols.success+" done - start children",route,parent,state);
+                    logger.log("router-debug:process-route",BRAGI.util.symbols.success+" done - start children",route,state);
                     Q.all(childrenPromises).then(function(children){
                         tree.childStates = children;
                         logger.log("router-debug:process-route",BRAGI.util.symbols.circleFilled+" complete",route,parent,state,tree);
@@ -146,12 +147,15 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                 }
             },
             handleRouteChange: function(e){
-                var request = e.detail;
-                this.fireRouteChangeStart(e.detail);
-                logger.log("router-debug","starting route change", e.detail);
+                e.stopPropagation();
+                return this.route(e.detail);
+            },
+            route: function(request){
+                this.fireRouteChangeStart(request);
+                logger.log("router-debug","starting route change", request);
 
 
-                if(e.detail.state === "<"){
+                if(request.state === "<"){
                     history.back();
                     //this.fireRouteChangeComplete(request,undefined, "back");
                     return Q.when("back");
@@ -163,7 +167,10 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                     return this.$.root.route(state, parameters,"activate").then(function(response){
                         var url = this.stateToUrl(this.routes,state,parameters);
                         request.url = url.url;
-                        this.pushState(request.url, request.state,response,replace);
+                        if(request.pushState !== false){
+                            this.pushState(request.url, request.state, request.parameters,response,replace);
+                        }
+
                         this.fireRouteChangeComplete(request,parameters, response);
                         logger.log("router-debug","routing complete",state,response);
                         return {
@@ -173,11 +180,11 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                         };
                     }.bind(this));
                 }
-
             },
-            pushState: function(urlParam,state,data,replace){
-                var url = this.html5Mode ? urlParam : window.location.pathname + urlParam;
-                var push = { data: data, state: state, url: url  };
+            pushState: function(urlParam,state,parameters,data,replace){
+                var url = this.html5Mode ? (urlParam == "" ? "/" : urlParam) : window.location.pathname + urlParam;
+
+                var push = { data: {parameters: parameters, resolved: data}, state: state, url: url  };
                 window.xRoute.current = push;
                 logger.log("router-debug","pushing state",push);
                 xRoute.history.push(push);
@@ -194,7 +201,13 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                     this.initialURL();
                 } else {
                     //var url = e.state.url.substring(this.$.root.url.length+1,e.state.url.length);
-                    this.$.root.route(e.state.state, e.state.url,"activate");
+                    //this.$.root.route(e.state.state, e.state.parameters,"activate");
+                    var event = {
+                        state: e.state.state,
+                        parameters: e.state.data.parameters,
+                        pushState: false
+                    };
+                    this.route(event);
                 }
             },
             stateToUrl: function(routes,state,parameters){
@@ -225,8 +238,9 @@ Surf Router is a suite of Polymer web components that allows routing user interf
 
                 return {url: res.url, parameters: res.parameters};
             },
-            urlToState: function(routes,urlParam){
-                logger.log("router-debug:urlToState",urlParam,routes);
+            urlToState: function(routes,urlParam,inParam){
+                var parameters = inParam === undefined ? {} : inParam;
+                logger.log("router-debug:urlToState",urlParam,routes,parameters);
                 var url = urlParam.charAt(0) === "#" ? urlParam.substring(1,urlParam.length) : urlParam;
                 var idx = url.indexOf("/",1);
                 var segment = idx > 0 ? url.substring(0,idx) : url;
@@ -250,16 +264,20 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                         selected = result.exact
                     }  else if(result.dynamic !== undefined){
                         selected = result.dynamic;
+                        var name = selected.url.substring(2,selected.url.length);
+                        parameters[name] = segment.substring(1,segment.length);
                     } else if(result.default !== undefined){
                         selected = result.default;
                         // we didn't actually consume this part of the URL, so put it back on
                         urlRemaining = urlRemaining === undefined ? segment : segment + urlRemaining;
                     } else {
-                        return routes.fullState;
+                        return { state: routes.fullState, parameters: parameters };
                     }
-                    return this.urlToState(selected,urlRemaining);
+                    return this.urlToState(selected,urlRemaining,parameters);
                 } else {
-                    return routes.fullState;
+                    var rtn = { state: routes.fullState, parameters: parameters };
+                    logger.log("router-debug:urlToState","complete",rtn);
+                    return rtn;
                 }
 
             },

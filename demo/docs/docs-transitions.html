@@ -18,6 +18,12 @@
                     When a state is activated, any elements in the container with the <i>unresolved</i> attribute will be removed and replaced with <i>resolved</i>.
                     This allows you to apply transitions to individual elements within your container.
                 </p>
+                <div>
+                    <div unresolved transition="slide-left" delay="250" >Delay: 250ms</div>
+                    <div unresolved transition="slide-left" delay="500" >Delay: 500ms</div>
+                    <div unresolved transition="slide-left" delay="750" >Delay: 750ms</div>
+                    <div unresolved transition="slide-left" delay="1000" >Delay: 1s</div>
+                </div>
                 <p>Two CSS transitions are listed below:</p>
                 <pre><code>
     [transition=fade][unresolved] {
@@ -29,7 +35,7 @@
     }
 
     [transition=slide-left][unresolved] {
-        transform: translateX(100%);
+        transform: translateX(200%);
     }
     [transition=slide-left]:not([unresolved]) {
         transition: transform 500ms cubic-bezier(0.4, 0, 0.2, 1);
