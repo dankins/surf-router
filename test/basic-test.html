@@ -135,13 +135,13 @@
 
 
         test("test routing",function(done){
-            var event = {detail: { state: "state1.sub1" }};
+            var event = { state: "state1.sub1" };
 
-            router.handleRouteChange(event).then(function(r1){
+            router.route(event).then(function(r1){
                 logger.log("test","done first",window.location.href);
-                var event2 = {detail: { state: "state2" }};
+                var event2 = { state: "state2" };
                 assert.equal(r1.request.state,"state1.sub1");
-                return router.handleRouteChange(event2)
+                return router.route(event2)
             }).then(function(response){
                 logger.log("test","routing done",response,window.location.href);
                 assert.equal(window.location.hash,"#/state2");
@@ -151,8 +151,8 @@
         });
 
         test("test resolve from routes",function(done){
-            var event = {detail: { state: "state2.dynamic.hasresolve", parameters: {dynamic: "foobar"} }};
-            router.handleRouteChange(event).then(function(response){
+            var event = { state: "state2.dynamic.hasresolve", parameters: {dynamic: "foobar"} };
+            router.route(event).then(function(response){
                 logger.log("test","resolve done",response.resolved);
                 assert.equal(response.resolved.something,"it works");
                 done();
@@ -160,8 +160,8 @@
         });
 
         test("test resolve from container",function(done){
-            var event = {detail: { state: "state2.dynamic.resolveB", parameters: {dynamic: "foobar"} }};
-            router.handleRouteChange(event).then(function(response){
+            var event = { state: "state2.dynamic.resolveB", parameters: {dynamic: "foobar"} };
+            router.route(event).then(function(response){
                 logger.log("test","resolve done",response.resolved);
                 assert.equal(response.resolved.resolveB,response.parameters.dynamic,"foobar");
                 done();
