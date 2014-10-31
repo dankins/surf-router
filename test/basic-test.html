@@ -37,6 +37,18 @@
             })
         </script>
     </polymer-element>
+
+    <polymer-element name="test-transitions" noscript>
+        <template>
+            <div id="wrapper" unresolved > </div>
+            <div id="delay1" unresolved delay="250">
+                <div id="delay2" unresolved delay="500">
+                    <content></content>
+                </div>
+                <div id="delay3" unresolved delay="750"></div>
+            </div>
+        </template>
+    </polymer-element>
 </head>
 <body>
 
@@ -60,6 +72,10 @@
                     },
                     sub2: {
                         url: "/sub2"
+                    },
+                    transitions: {
+                        url: "/transitions",
+                        container: "test-transitions"
                     }
                 }
             },
@@ -191,6 +207,18 @@
             })
 
             .done();
+        });
+
+        test("test transitions",function(done){
+            // I am not really sure the best way to test the transitions
+            // They should go from unresolved->resolved after the # of ms defined in the delay attribute (or immediately if undefined)
+            router.addEventListener("route-change-complete", function cb() {
+                var container = xRoute.routes["state1.transitions"].$.container;
+                assert.isDefined(container.$.delay3.getAttribute("resolved"));
+                //logger.log("TEST",container.$.delay1);
+                done();
+            });
+            router.route({ state: "state1.transitions"});
         });
     });
 </script>

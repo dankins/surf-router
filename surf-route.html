@@ -211,12 +211,23 @@ Polymer({
         }
     },
     _initialize: function(parameters,data){
-        logger.log("route-trace:_initialize","start %s",this.fullState,parameters,data);
+        var state = this.fullState;
+        logger.log("route-trace:_initialize","start %s",state,parameters,data);
         this.execIfDefined(this.initialize,this.$.container,[parameters,data]);
         var elems = this.$.container.shadowRoot.querySelectorAll("[unresolved]");
+        logger.log("route-trace:_initialize","elements %s",elems);
+
+        function reveal(element){
+            logger.log("route-trace:_initialize","revealing",state,element);
+            element.setAttribute("resolved","");
+            element.removeAttribute("unresolved");
+        }
+
         for(var i = 0; i<elems.length; i++){
-            elems[i].setAttribute("resolved","");
-            elems[i].removeAttribute("unresolved");
+            var delay = elems[i].getAttribute("delay");
+            delay = delay === undefined || delay === null ? 0 : parseInt(delay);
+            logger.log("route-trace:_initialize","delay %s : %s",state,delay,elems[i]);
+            this.async(reveal,elems[i],delay);
         }
         logger.log("route-trace:_initialize","complete %s",this.fullState,parameters,data);
     },
