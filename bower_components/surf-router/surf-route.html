@@ -2,6 +2,49 @@
 <link rel="import" href="surf-route-abstract.html">
 <link rel="import" href="q.html">
 
+<!--
+The surf-router uses its `routes` parameter to construct a tree of <surf-route> elements.
+You do not need to create these elements - the router will do this for you. The properties documented below can be used to construct a recursive tree of routes.
+##### Example
+    {
+        url: "" // this is the root element
+        children: {
+            routeA: {
+                url: "/a",
+                container: "app-a-element",
+                imports: ["app-a-element.html","some-other-element.html"]
+                children: {
+                    asub1: {
+                        url: "",,
+                        children: {
+                            deepnest: {
+                                url: "/foo" // full url is "/a/foo"
+                            }
+                        }
+                    }
+                }
+            },
+            routeB: {
+                url: "/b",
+                container: "app-b-element",
+                imports: "app-a-element.html",
+                children: {
+                    bsub1: {
+                        url: "/:dynamic",
+                        resolve: {
+                            foo: function(params,data){
+                                return -1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+@element surf-route
+@status alpha
+@homepage http://surfapp.github.io/surf-router
+-->
 <polymer-element name="surf-route" constructor="SurfRoute" layout vertical center>
 
 <template>
@@ -11,91 +54,102 @@
 Polymer({
     publish: {
         /**
+         * The URL associated with the state. URLs will be appended to it's parent state.
          *
+         * @property url
+         * @type string
+         * @default ""
          */
         url: "",
         /**
-         * The name of the element that will be created
-         * Default: surf-route-abstract - this will just hold other child states
+         * The name of the element that will be created. This should be a custom element that you create.
+         * Your element should contain a `content` element in the template. You may also want a `resolve` object and `init` function.
          *
+         * @property container
+         * @type string
+         * @default surf-route-abstract
          */
         container: "surf-route-abstract",
         /**
          * Any fields here will be set as attributes on the container
-         * default undefined
+         * `note` : this is actually implemented yet
+         * @property containerData
+         * @default undefined
          */
         containerData: undefined,
         /**
-         * setting to TRUE will delay the creation of the container until the route is active
+         * containerDefer controls when an element will be upgraded from `surf-route-abstract` to the container specified in the `container` option. <br/>
+         * setting to TRUE will delay the creation of the container until the route is active <br/>
          * setting to FALSE will not create the container (or load imports) until the route state is active
+         * @property containerDefer
+         * @property Boolean
+         * @default true
          */
         containerDefer: true,
         /**
-         * the specified file/files will be imported
-         * will also work for an array
-         * example: "/app/app.html"
+         * the specified file/files will be imported. This can be either an array or a string <br/>
+         * example: "/app/app.html" or ["/app/app.html","/app/another.html"]
+         * @property imports
+         * @type Array
          */
         imports: undefined,
         /**
-         * whether imports have completed loading
-         */
-        importsLoaded: false,
-        /**
-         *
-         * attached: will load any imports as soon as the route is created
-         * lazy: will not load imports until the state has been activated for the first time
+         * Determines when to load files specified in the `imports` property. <br/>
+         * true: will not load imports until the state has been activated for the first time <br/>
+         * false: will load any imports as soon as the route is created
+         * @property lazyImports
+         * @type Boolean
+         * @default true
          */
         lazyImports: true,
         /**
-         * immediate / imports / resolved / ready
-         */
-        reveal: "immediate",
-        createdTransition: "fade",
-        destroyedTransition: "fade",
-        /**
-         * will run the function specified on the contain upon activation
+         * will run the function specified on the container upon activation. <br/>
+         * If this property is a string, it will run the function of the same name in the container <br/>
+         * If this property is a function, it will be run under the context of the container <br/>
+         * The function will be passed two parameters:<br/>
+         * <strong>params:</strong> the object with the dynamic parameters from the URL <br/>
+         * <strong>data:</strong> the object with the resolved parameters
+         * @property initialize
+         * @type string
+         * @default init
          */
         initialize: "init",
         /**
-         * will run the function specified on the contain upon deactivation
+         * will run the function specified on the contain upon deactivation.<br/>
+         * This has the same behavior as `initialize` except when the state is deactivated.
+         * @property teardown
+         * @type string
+         * @default deactivate
          */
         teardown: "deactivate",
         /**
-         * will resolve data in the containers "resolve" object
-         * if 'resolve' is an object it will attempt to resolve it under the current scope
+         * Resolved data is run before the state is activated and make available to the container. <br/>
+         * If the property is the string "container", it will look for an object named `resolve` in the container.<br/>
+         * This object should contain any number of properties that return a value.<br/>
+         * The route's `resolve` property can be an object instead of a string, and will be run under the context of the `surf-router`
+         * @property resolve
+         * @type string
+         * @default container
          */
         resolve: "container",
         /**
-         * if true, data will be resolved upon creation of the container
-         * yes: data will be resolved and will block until successful
-         * lazy: data will be resolved but will not block the rest of the routing tree creation
-         * no: data will not be resolved until specified in "resolveTime"
-         */
-        resolveOnCreation: "no",
-        /**
+         * todo this is not implemented yet
          * once: will resolve when the state is activated for the first time and will not do so again until the page is reloaded
          * active: will resolve when the state or any of it's children are activated. This will NOT resolve again if child state is subsequently activated after the first
          * childActive: will resolve when the state or any children are activated. If another child is activated again it WILL resolve again
          */
         resolveTime: "active",
         /**
-         * This is currently not used, but at some point will active the state specified if no other child is specified
+         * The default state to activate if this is the last state in the request but there are still child states available.
+         * @property default
+         * @type string
          */
-        default: undefined,
-        /**
-         * will call the specified function on the container
-         * default: undefined
-         */
-        enterTransition: "fade",
-        leaveTransition: "fade",
-        enterState: "container",
-        leaveState: "container",
-        /**
-         * this function will be run under the context of the container when the state is activated
-         */
-        activated: undefined,
-        deactivated: undefined
+        default: null
     },
+    /**
+     * whether imports have completed loading
+     */
+    importsLoaded: false,
     created: function(){
         this.childStates = []; // note - do not add this to the prototype or bad stuff will happen
     },

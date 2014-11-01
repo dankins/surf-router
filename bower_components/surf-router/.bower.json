@@ -34,7 +34,7 @@
   "_resolution": {
     "type": "version",
     "tag": "0.0.4",
-    "commit": "86299a49425cb9457075cecbaa25c6c3862b74bd"
+    "commit": "b5cb19aaf4c48de7bcbd04deaa0e7490040b67a5"
   },
   "_source": "git://github.com/surfapp/surf-router.git",
   "_target": "^0.0.4",
