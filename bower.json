@@ -1,6 +1,6 @@
 {
   "name": "surf-router",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "authors": [
     "Dan Kinsley <dan@surfbeta.com>"
   ],
@@ -23,8 +23,8 @@
   ],
   "dependencies": {
     "polymer": "Polymer/polymer#^0.4.2",
-    "q": "1.0.1",
-    "bragi-browser": "enoex/bragi-browser#^0.0.9"
+    "bragi-browser": "enoex/bragi-browser#^0.0.9",
+    "es6-promise": "1.0.0"
   },
   "devDependencies": {
     "polymer-test-tools": "Polymer/polymer-test-tools#^0.4.2",

@@ -161,7 +161,9 @@
                 assert.equal(window.location.hash,"#/state2");
                 assert.equal(response.request.state,"state2");
                 done();
-            }).done();
+            }).catch(function(error){
+                logger.log("error",error)
+            });
         });
 
         test("test resolve from routes",function(done){
@@ -169,7 +171,9 @@
             router.route(event).then(function(response){
                 assert.equal(response.resolved.something,"it works");
                 done();
-            }).done();
+            }).catch(function(error){
+                logger.log("error",error)
+            });
         });
 
         test("test resolve from container",function(done){
@@ -177,23 +181,24 @@
             router.route(event).then(function(response){
                 assert.equal(response.resolved.resolveB,response.parameters.dynamic,"foobar");
                 done();
-            }).done();
+            }).catch(function(error){
+                logger.log("error",error)
+            });
         });
 
         test("test popstate",function(done){
 
             function goBack(expectState, routeResponse){
-                var deferred = Q.defer();
-                router.addEventListener("route-change-complete", function cb(response) {
-                    logger.log("test", "route done", response.detail);
-                    assert.equal(response.detail.request.state,expectState);
-                    router.removeEventListener("route-change-complete",cb);
+                return new Promise(function(resolve){
+                    router.addEventListener("route-change-complete", function cb(response) {
+                        logger.log("test", "route done", response.detail);
+                        assert.equal(response.detail.request.state,expectState);
+                        router.removeEventListener("route-change-complete",cb);
 
-                    deferred.resolve(response);
+                        resolve(response);
+                    });
+                    history.back();
                 });
-                history.back();
-
-                return deferred.promise;
             }
 
             router.route({ state: "state2" })
@@ -204,9 +209,9 @@
             .then(function(result){
                 assert.equal(result.detail.request.state,"state2");
                 done();
-            })
-
-            .done();
+            }).catch(function(error){
+                logger.log("error",error)
+            });
         });
 
         test("test transitions",function(done){
