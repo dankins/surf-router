@@ -56,7 +56,8 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                     current: {},
                     history: []
                 };
-                this.process(this.routes,this,undefined,{}).then(function(response){
+                this.process(this.routes,this,undefined,this.process).then(function(response){
+                    this.$.root = response.root;
                     // now that all of the routes are ready, process the URL route
                     window.xRoute.ready = true;
                     window.xRoute.tree = response;
@@ -89,49 +90,59 @@ Surf Router is a suite of Polymer web components that allows routing user interf
              * @param route - an object containing the properties for the new route
              * @param parent - an HTML for a surf-route
              * @param state
-             * @param inTree
+             * @param processFunc
              */
-            process: function(route,parent,state){
-                logger.log("router-debug:process-route",BRAGI.util.symbols.circle+"start",route,parent,state);
-                var tree = {};
-                var deferred = Q.defer();
-                // push  state->url map
-                var elem = new SurfRoute();
-                elem.fromObject(state,route,parent.fullURL,parent.fullState).then(function(response){
-
-                    if(parent.nodeName === "SURF-ROUTER"){
-                        elem.setAttribute("id","root");
-                        this.$.root = elem;
-                        parent.shadowRoot.appendChild(elem);
-                    } else {
-                        window.xRoute.routes[elem.fullState] = elem;
-                        parent.addRoute(elem);
-                    }
-                    tree.url = elem.url;
-                    tree.fullURL = elem.fullURL;
-                    tree.fullState = elem.fullState;
-                    tree.state = elem.state;
-
-                    // Process children
-                    var childrenPromises = [];
-                    for(var prop in route.children){
-                        if (route.children.hasOwnProperty(prop)){
-                            var child = route.children[prop];
-                            var promise = this.process(child,elem,prop);
-                            childrenPromises.push(promise);
+            process: function(route,parent,state,processFunc){
+                logger.log("router-debug:process-route","starting to process",state);
+                return new Promise(function(resolve) {
+                    logger.log("router-debug:process-route", BRAGI.util.symbols.circle + "start", route, parent, state);
+                    var elem = new SurfRoute();
+                    elem.fromObject(state,route,parent.fullURL,parent.fullState).then(function(response){
+                        logger.log("router-debug:process-route","created",state,response);
+                        var tree = {};
+                        if(parent.nodeName === "SURF-ROUTER"){
+                            logger.log("router-debug:process-route","created1");
+                            elem.setAttribute("id","root");
+                            tree.root = elem;
+                            root = elem;
+                            parent.shadowRoot.appendChild(elem);
+                        } else {
+                            xRoute.routes[elem.fullState] = elem;
+                            parent.addRoute(elem);
                         }
-                    }
+                                logger.log("router-debug:process-route","create3");
+                        tree.url = elem.url;
+                        tree.fullURL = elem.fullURL;
+                        tree.fullState = elem.fullState;
+                        tree.state = elem.state;
+                        tree.childStates = [];
 
-                    // wait for all the children to resolve then resolve the current one
-                    logger.log("router-debug:process-route",BRAGI.util.symbols.success+" done - start children",route,state);
-                    Q.all(childrenPromises).then(function(children){
-                        tree.childStates = children;
-                        logger.log("router-debug:process-route",BRAGI.util.symbols.circleFilled+" complete",route,parent,state,tree);
-                        deferred.resolve(tree);
-                    });
-                }.bind(this));
+                        logger.log("router-debug:process-route","xx",state,route.children);
+                        // Process children
+                        var childrenPromises = [];
+                        for(var prop in route.children){
+                            if (route.children.hasOwnProperty(prop)){
+                                var child = route.children[prop];
+                                var promise = processFunc(child,elem,prop,processFunc);
+                                childrenPromises.push(promise);
+                            }
+                        }
 
-                return deferred.promise;
+                        // wait for all the children to resolve then resolve the current one
+                        logger.log("router-debug:process-route",BRAGI.util.symbols.success+" done - start children",route,state);
+                        logger.log("router-debug:process-route","child promises:",childrenPromises);
+                        if(childrenPromises.length > 0){
+                            Promise.all(childrenPromises).then(function(children){
+                                tree.childStates = children;
+                                logger.log("router-debug:process-route",BRAGI.util.symbols.circleFilled+" complete",route,parent,state,tree);
+                                resolve(tree);
+                            });
+                        } else {
+                            resolve(tree);
+                        }
+
+                    })
+                });
 
             },
             getFullState: function(){
@@ -159,7 +170,7 @@ Surf Router is a suite of Polymer web components that allows routing user interf
                 if(request.state === "<"){
                     history.back();
                     //this.fireRouteChangeComplete(request,undefined, "back");
-                    return Q.when("back");
+                    return Promise.resolve("back");
                 } else {
                     var state = request.state;
                     var parameters = request.parameters;

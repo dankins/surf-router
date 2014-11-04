@@ -20,25 +20,25 @@
                     Any data resolved from a parent state will be available to the child.
                     The state will look for a <i>resolve</i> property on the container and will then execute all of the functions contained therein.
                     The resulting values will be passed into the <i>initialize</i> function to allow you to use the them in the container.
-                    For example, this page resolved "theTime" as seen below:
+                    For example, this page resolved the data seen below:
                 </p>
                 <div>
-                    <strong>Current Date</strong> {{theTime}}
+                    <strong>Current Date</strong> {{theTime}} <br/>
+                    <strong>Resolved after 1s delay</strong> {{data.resolveB}}
                 </div>
                 <p>
-                    All of the resolved data are wrapped as promises using the <a href="https://github.com/kriskowal/q">Q library</a>.
-                    It is recommended to use the Q library to wrap API calls to prevent resolves from blocking.
+                    All of the resolved data are wrapped as promises using the <a href="http://www.html5rocks.com/en/tutorials/es6/promises/">ES6-style promises</a>.
+                    It is recommended to use this style of promises in your resolve objects.
                     An example is provided below:
                 </p>
                 <pre><code>
     resolve: {
         foo: function(params,data){
-            var deferred = Q.defer();
-            var id = data.id;
-            this.async(function(){
-                deferred.resolve("foo");
-            });
-            return deferred.promise();
+            return new Promise(function(resolve){
+                this.async(function(){
+                    resolve(-1);
+                },null,1000)
+            }.bind(this));
 
         },
         bar: function(){
@@ -113,7 +113,20 @@
 
                 },
                 resolveB: function(params,data){
-                    return -1;
+                    logger.log("DEMO","starting to resolve 'resolveB'");
+                    return new Promise(function(resolve){
+                        this.async(function(){
+                            var currentdate = new Date();
+                            logger.log("DEMO","completed resolve 'resolveB'");
+                            var rtn = currentdate.getDate() + "/"
+                                    + (currentdate.getMonth()+1)  + "/"
+                                    + currentdate.getFullYear() + " @ "
+                                    + currentdate.getHours() + ":"
+                                    + currentdate.getMinutes() + ":"
+                                    + currentdate.getSeconds();
+                            resolve(rtn);
+                        },null,1000)
+                    }.bind(this));
                 }
             },
             init: function(params,data){

@@ -1,6 +1,6 @@
 {
   "name": "surf-router",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "authors": [
     "Dan Kinsley <dan@surfbeta.com>"
   ],
@@ -23,20 +23,20 @@
   ],
   "dependencies": {
     "polymer": "Polymer/polymer#^0.4.2",
-    "q": "1.0.1",
-    "bragi-browser": "enoex/bragi-browser#^0.0.9"
+    "bragi-browser": "enoex/bragi-browser#^0.0.9",
+    "es6-promise": "1.0.0"
   },
   "devDependencies": {
     "polymer-test-tools": "Polymer/polymer-test-tools#^0.4.2",
     "web-component-tester": "Polymer/web-component-tester#^1.2.0"
   },
-  "_release": "0.0.4",
+  "_release": "0.0.5",
   "_resolution": {
     "type": "version",
-    "tag": "0.0.4",
-    "commit": "b5cb19aaf4c48de7bcbd04deaa0e7490040b67a5"
+    "tag": "0.0.5",
+    "commit": "dbe0d06f0272638e5032c20c1543b012eafa24e7"
   },
   "_source": "git://github.com/surfapp/surf-router.git",
-  "_target": "^0.0.4",
+  "_target": "^0.0.5",
   "_originalSource": "surfapp/surf-router"
 }

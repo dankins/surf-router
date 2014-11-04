@@ -1,6 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="surf-route-abstract.html">
-<link rel="import" href="q.html">
 
 <!--
 The surf-router uses its `routes` parameter to construct a tree of <surf-route> elements.
@@ -188,37 +187,32 @@ Polymer({
         return this.startContainer();
 
     },
-    runIf: function(bool,fun,args){
-        return bool ? Q.when(fun.apply(this,args)) : Q.when("did not run function:");
-    },
     loadImports: function(){
-        var deferred = Q.defer();
-        if(this.imports == undefined) {
-            this.importsLoaded = true;
-            deferred.resolve("no imports");
-            return deferred.promise;
-        }
-        if(! (this.imports instanceof Array)){
-            this.imports = [this.imports];
-        }
-
-        var loaded = this.importsLoaded;
-        if(!loaded){
-            Polymer.import(this.imports, function(){
-                loaded = true;
-                deferred.resolve("loaded");
-            });
-        } else {
-            console.debug("Imports have already been loaded");
-            deferred.resolve("already loaded");
-        }
-
-        return deferred.promise;
+        return new Promise(function(resolve){
+            if (this.importsLoaded){
+                logger.log("route-debug","Imports have already been loaded");
+                resolve("already loaded");
+            } else if(this.imports == undefined) {
+                this.importsLoaded = true;
+                resolve("no imports");
+            } else {
+                if(! (this.imports instanceof Array)) {
+                    this.imports = [this.imports];
+                }
+                var loaded = this.importsLoaded;
+                Polymer.import(this.imports, function(){
+                    loaded = true;
+                    logger.log("surf-route:debug","Imports loaded");
+                    resolve("loaded");
+                });
+            }
+        }.bind(this));
     },
     startContainer: function(){
         if(!this.containerDefer && this.container != "surf-route-abstract"){
             return this.loadImports().then(this.createContainer.bind(this,this.container)).then(function(){
                 this.upgraded = true;
+                return this;
             }.bind(this))
         } else {
             return this.createContainer("surf-route-abstract");
@@ -226,22 +220,24 @@ Polymer({
 
     },
     createContainer: function(name){
-        var deferred = Q.defer();
-        var elem = document.createElement(name);
-        //elem.setAttribute('unresolved', '');
+        return new Promise(function(resolve){
+            var elem = document.createElement(name);
+            //elem.setAttribute('unresolved', '');
 
-        this.appendChild(elem);
-        this.$.container = elem;
-        deferred.resolve(elem);
-        return deferred.promise;
+            this.appendChild(elem);
+            this.$.container = elem;
+            resolve(elem);
+        }.bind(this));
     },
     /**
      *
      * @param routeElem
      */
     addRoute: function(routeElem){
+        logger.log("route-debug","Adding route",routeElem);
         this.$.container.appendChild(routeElem);
         this.childStates.push(routeElem);
+        logger.log("route-debug","Done",routeElem);
     },
     upgradeContainer: function(){
         if(!this.upgraded && this.$.container.nodeName != this.container.toUpperCase()){
@@ -304,7 +300,7 @@ Polymer({
     },
     _activate: function(parameters,data){
         logger.log("route-trace:_activate","start %s",this.fullState,parameters,data);
-        var deferred = Q.defer();
+
         var init = this._initialize.bind(this,parameters);
         var container = this.$.container;
         container.setAttribute('unresolved', '');
@@ -315,26 +311,26 @@ Polymer({
             init(finalData);
             this.$.container.setAttribute('resolved', '');
             this.$.container.removeAttribute('unresolved');
-            deferred.resolve(finalData);
             logger.log("route-trace:_activate","complete %s",this.fullState,finalData);
+            return finalData;
         }
-        this.upgradeContainer().then(this._resolve.bind(this,parameters,data)).then(complete.bind(this));
 
-        return deferred.promise;
+        return this.upgradeContainer().then(this._resolve.bind(this,parameters,data)).then(complete.bind(this));
     },
     _deactivate: function(){
         logger.log("route-trace:_deactivate","start %s",this.fullState);
-        var deferred = Q.defer();
-        if(this.active){
-            //console.log("deactivate:",this.state);
-            this._teardown();
-        }
 
-        this.active = false;
-        this.hidden = true;
-        deferred.resolve("ok");
-        logger.log("route-trace:_deactivate","complete %s",this.fullState);
-        return deferred.promise;
+        return new Promise(function(resolve){
+            if(this.active){
+                //console.log("deactivate:",this.state);
+                this._teardown();
+            }
+
+            this.active = false;
+            this.hidden = true;
+            resolve("ok");
+            logger.log("route-trace:_deactivate","complete %s",this.fullState);
+        }.bind(this));
     },
     _resolve: function(parameters,data){
         logger.log("route-trace:_resolve","start %s",this.fullState,parameters,data);
@@ -360,7 +356,7 @@ Polymer({
         }
         else {
             logger.log("route-trace:_resolve","complete (no resolve) %s",this.fullState);
-            return Q.when(data);
+            return Promise.resolve(data);
         }
     },
     resolveData: function(parameters,data,resolve){
@@ -384,8 +380,7 @@ Polymer({
                     promise = resolve[property];
                 }
                 promises.push(
-                        Q.when(promise, resolveCallback.bind(this,property))
-                        //Q.when(promise)
+                    Promise.resolve(promise).then(resolveCallback.bind(this,property))
                 )
             }
         }
@@ -394,7 +389,7 @@ Polymer({
             return data;
         }
 
-        return Q.all(promises).then(function(results){
+        return Promise.all(promises).then(function(results){
             results.forEach(function (result) {
                 data[result.prop] = result.resolved;
             });
@@ -402,43 +397,42 @@ Polymer({
         });
     },
     route: function(relativeState,parameters,action,inData){
-        logger.log("route-trace:route","starting %s",relativeState,parameters,action,inData);
-        var data = inData === undefined ? {} : inData;
+        return new Promise(function(resolve){
+            logger.log("route-trace:route","starting %s",relativeState,parameters,action,inData);
+            var data = inData === undefined ? {} : inData;
 
-        var states = relativeState.split(".");
-        var nextState = states.shift();
-        var stateRemaining = states.join(".");
-        var deferred = Q.defer();
+            var states = relativeState.split(".");
+            var nextState = states.shift();
+            var stateRemaining = states.join(".");
 
-        //console.log(action,this.fullState,relativeState,relativeURL);
-        var startPromise = action == "activate" ? this._activate.bind(this,parameters,data) : this._deactivate.bind(this);
-        var children = this.childStates;
-        var defaultState = this.default;
+            //console.log(action,this.fullState,relativeState,relativeURL);
+            var startPromise = action == "activate" ? this._activate.bind(this,parameters,data) : this._deactivate.bind(this);
+            var children = this.childStates;
+            var defaultState = this.default;
 
-        // returns an array of promises for each child route
-        function routeChildren(processedData){
-            logger.log("route-debug:route:children","starting to route children",relativeState,processedData);
-            return children.map(function(child){
-                var nextAction = (nextState === "" && child.state === defaultState && action === "activate")  || (nextState === child.state )  ? "activate" : "deactivate";
-                return child.route(stateRemaining,parameters,nextAction,processedData);
-            });
-        }
-
-        startPromise.call().then(function(response){
-            if(action == "activate") {
-                logger.log("route-debug:route","activated",response);
-                Q.all(routeChildren(response)).then(function(lastResponse){
-                    logger.log("route-debug","resolved",lastResponse);
-                    deferred.resolve(response);
+            // returns an array of promises for each child route
+            function routeChildren(processedData){
+                logger.log("route-debug:route:children","starting to route children",relativeState,processedData);
+                return children.map(function(child){
+                    var nextAction = (nextState === "" && child.state === defaultState && action === "activate")  || (nextState === child.state )  ? "activate" : "deactivate";
+                    return child.route(stateRemaining,parameters,nextAction,processedData);
                 });
-            } else {
-                logger.log("route-debug:route","deactivated",response);
-                deferred.resolve("deactivated OK");
-                Q.all(routeChildren(response));
             }
-        });
 
-        return deferred.promise;
+            startPromise.call().then(function(response){
+                if(action == "activate") {
+                    logger.log("route-debug:route","activated",response);
+                    Promise.all(routeChildren(response)).then(function(lastResponse){
+                        logger.log("route-debug","resolved",lastResponse);
+                        resolve(response);
+                    });
+                } else {
+                    logger.log("route-debug:route","deactivated",response);
+                    resolve("deactivated OK");
+                    Promise.all(routeChildren(response));
+                }
+            });
+        }.bind(this));
     }
 
 
