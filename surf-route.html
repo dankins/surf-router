@@ -291,7 +291,7 @@ You do not need to create these elements - the router will do this for you. The 
                     element.removeAttribute("unresolved");
                 }
 
-                logger.log("TRACE","elements to reveal: %s",elems.length);
+                logger.log("route-trace:_initialize","elements to reveal: %s",state,elems.length);
                 for(var i = 0; i<elems.length; i++){
                     var delay = elems[i].getAttribute("delay");
                     delay = delay === undefined || delay === null ? 0 : parseInt(delay);
